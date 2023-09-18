@@ -88,3 +88,26 @@ Remember to stage files again if there are any changes made by the pre-commit ho
 ```bash
 git add .
 ```
+
+### VS Code Settings
+
+You can add a workspace setting to automatically format your code on save using the black formatter.
+
+You need to have the [Black Formatter](https://marketplace.visualstudio.com/items?itemName=ms-python.black-formatter) VS Code extension installed.
+
+Bring up the command palette with Ctrl+Shift+P(Windows/Linux) / Cmd+Shift+P(Mac) and search for "Preferences: Open Workspace Settings (JSON)".
+
+Then replace the content with the following:
+```json
+{
+    "editor.formatOnSave": true,
+    "[python]": {
+        "editor.defaultFormatter": "ms-python.black-formatter",
+    },
+    "black-formatter.args": [
+        "--line-length",
+        "79",
+        "--experimental-string-processing"
+    ],
+}
+```
