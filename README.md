@@ -68,4 +68,23 @@ When you want to deactivate the virtual environment.
 deactivate
 ```
 
+### Lint and Pre-commit
 
+We use [Flake8](https://flake8.pycqa.org) and [ISort](https://pycqa.github.io/isort/) for the coding style and guidelines. The style is then enforced by [pre-commit](https://pre-commit.com).
+
+Finish the environment setup above (especially installing the dependencies with pip) before using pre-commit.
+
+Install and setup pre-commit.
+```bash
+pre-commit install
+```
+
+To run pre-commit manually (only scans staged files).
+```bash
+pre-commit run --all-files
+```
+
+Remember to stage files again if there are any changes made by the pre-commit hooks or by you.
+```bash
+git add .
+```
