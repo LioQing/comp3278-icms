@@ -111,3 +111,95 @@ Then replace the content with the following:
     ],
 }
 ```
+
+## Django and Database
+
+### Install MySQL
+
+We use [MySQL](https://www.mysql.com/) for our database.
+
+Make sure MySQL is installed.
+```bash
+mysql --version
+```
+
+Open MySQL shell.
+```bash
+sudo mysql
+# or
+mysql -u root -p
+```
+
+Create a database for the project. Here we use `icms` as the database name.
+```sql
+CREATE DATABASE icms;
+```
+
+Make sure the database is created.
+```sql
+SHOW DATABASES;
+```
+
+### Create a User for Django
+
+Theoretically, you can let Django use root so it gets all privileges, but it is not recommended.
+
+Instead, you should create a user with limited privileges for Django to use.
+
+Create a user for django to access your database. Here `icms` is used as the username and `icms1234` is used as the password.
+```sql
+CREATE USER 'icms'@'localhost' IDENTIFIED BY 'icms1234';
+```
+
+Grant the user necessary privileges.
+```sql
+GRANT SELECT, INSERT, UPDATE, DELETE, CREATE, DROP, REFERENCES, INDEX, ALTER ON `icms`.* TO `icms`@`localhost` WITH GRANT OPTION;
+```
+
+Make sure the user is created and granted the respective privileges.
+```sql
+SHOW GRANTS FOR 'icms'@'localhost';
+```
+
+### Configure Django to Use the Database
+
+Make a copy of the `template.env` file and rename it to `.env`.
+```bash
+# Linux, Mac OS X, PowerShell
+cp template.env .env
+# cmd.exe
+copy template.env .env
+```
+
+Change the values according to your database settings.
+
+Check if it works by running. It is okay if there is warning aboue unapplied migrations.
+```bash
+python manage.py runserver
+```
+
+### Migrate the Models
+
+Run the following command to apply migrations.
+```bash
+python manage.py makemigrations
+python manage.py migrate
+```
+
+### Test the Server
+
+Run the server again to check if it works.
+```bash
+python manage.py runserver
+```
+
+Go to http://127.0.0.1:8000/ at your browser to see if it works.
+
+### Create a Superuser
+
+***Important: do not do this step yet, if superuser is created and we want to alter the User model the database need to be recreated.***
+
+This creates a superuser (admin) for the Django admin site.
+```bash
+python manage.py createsuperuser
+```
