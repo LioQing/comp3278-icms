@@ -18,7 +18,7 @@ To get started with the backend, go to branch [backend](https://github.com/LioQi
 ```
 <whatever directory you are in>/
 ├─ comp3278-icms-frontend/
-│  ├─ <frontend branch files>
+│  └─ <frontend branch files>
 └─ comp3278-icms-backend/
    └─ <backend branch files>
 ```
