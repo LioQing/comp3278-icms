@@ -11,6 +11,35 @@ To get started with the frontend, go to branch [frontend](https://github.com/Lio
 
 To get started with the backend, go to branch [backend](https://github.com/LioQing/comp3278-icms/tree/backend).
 
+## Project File Structure
+
+***Important: due to the use of local commit hooks, it is highly recommended to `git clone` the repository once for each branch, and have a file structure like the follow:***
+
+`git clone` the repository.
+```bash
+git clone git@github.com:LioQing/comp3278-icms.git
+```
+
+Checkout the respective branch, or do not checkout any branch to stay in main branch.
+```bash
+git checkout frontend
+# or
+git checkout backend
+# or
+git checkout main
+```
+
+Then rename the directory to the respective branch to create a structure like below.
+```
+<whatever directory you are in>/
+├─ comp3278-icms-main/
+│  └─ <main branch files>
+├─ comp3278-icms-frontend/
+│  └─ <frontend branch files>
+└─ comp3278-icms-backend/
+   └─ <backend branch files>
+```
+
 ## System Flow Diagram
 
 ### Login Flow
@@ -80,35 +109,6 @@ flowchart TD
     change -.- database
     
     logout -.- cookie>Cookie]
-```
-
-## Project File Structure
-
-***Important: due to the use of local commit hooks, it is highly recommended to `git clone` the repository once for each branch, and have a file structure like the follow:***
-
-`git clone` the repository.
-```bash
-git clone git@github.com:LioQing/comp3278-icms.git
-```
-
-Checkout the respective branch, or do not checkout any branch to stay in main branch.
-```bash
-git checkout frontend
-# or
-git checkout backend
-# or
-git checkout main
-```
-
-Then rename the directory to the respective branch to create a structure like below.
-```
-<whatever directory you are in>/
-├─ comp3278-icms-main/
-│  └─ <main branch files>
-├─ comp3278-icms-frontend/
-│  └─ <frontend branch files>
-└─ comp3278-icms-backend/
-   └─ <backend branch files>
 ```
 
 ## Start Development
