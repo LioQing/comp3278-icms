@@ -163,12 +163,12 @@ SHOW GRANTS FOR 'icms'@'localhost';
 
 ### Configure Django to Use the Database
 
-Make a copy of the `template.env` file and rename it to `.env`.
+Make a copy of the `.env.example` file and rename it to `.env`.
 ```bash
 # Linux, Mac OS X, PowerShell
-cp template.env .env
+cp .env.example .env
 # cmd.exe
-copy template.env .env
+copy .env.example .env
 ```
 
 Change the values according to your database settings.

@@ -12,7 +12,7 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 
 from pathlib import Path
 
-from configs import db_config
+from configs import db_config, django_config
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -21,15 +21,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = (
-    "django-insecure-^o*shdjf1vwkp17nuo&w252xdt%a=y&&nlw=-ygv)syt=c#%@v"
-)
-
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
-
-ALLOWED_HOSTS = []
+SECRET_KEY = django_config.secret_key
+DEBUG = django_config.debug
+ALLOWED_HOSTS = django_config.allowed_hosts
 
 
 # Application definition
@@ -43,6 +37,8 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "corsheaders",
     "rest_framework",
+    "core.apps.CoreConfig",
+    "drf_spectacular",
 ]
 
 MIDDLEWARE = [
@@ -139,7 +135,15 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # REST framework
 REST_FRAMEWORK = {
-    "DEFAULT_AUTHENTICATION_CLASSES": [
-        "rest_framework_simplejwt.authentication.JWTAuthentication",
-    ],
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+}
+
+# DRF spectacular settings
+SPECTACULAR_SETTINGS = {
+    "TITLE": "COMP3278 ICMS API",
+    "DESCRIPTION": "API for the ICMS.",
+    "VERSION": "1.0.0",
+    "SERVE_INCLUDE_SCHEMA": False,
+    "COMPONENT_SPLIT_REQUEST": True,
+    "ENFORCE_NON_BLANK_FIELDS": True,
 }
