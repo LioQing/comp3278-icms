@@ -69,7 +69,7 @@ flowchart TD
     setupFaceQ -- No --> home
     setupFace --> home
 
-    cookie>Cookie] -.- loggedIn
+    cookie[(Cookie)] -.- loggedIn
     cookie -.- hasUser
 
     login --> home
@@ -81,7 +81,9 @@ flowchart TD
 flowchart TD
     navbar([Navigation bar]) --> home[Home page]
     navbar --> add[Add course]
-    navbar --> settings[Settings page]
+    navbar --> account[Account page]
+    navbar --> lastLogin[Display last login]
+    navbar --> actions[User actions]
 
     home --> classWithinOneHour{Has class within 1 hour?}
     classWithinOneHour -- Yes --> displayCourse[Display course info]
@@ -94,9 +96,8 @@ flowchart TD
 
     add --> inputCourse[/Input course info/]
 
-    settings --> latestBehavior[Display latest behavior]
-    settings --> change[/Change username, password, or face/]
-    settings --> logout([Logout])
+    account --> latestBehavior[Display latest behavior]
+    account --> change[/Change username, password, or face/]
 
     database[(Database)]
     database -.- displayCourse
@@ -106,9 +107,14 @@ flowchart TD
     classWithinOneHour -.- database
     inputCourse -.- database
     latestBehavior -.- database
+    lastLogin -.- database
     change -.- database
     
-    logout -.- cookie>Cookie]
+    logout -.- cookie[(Cookie)]
+
+    actions --> settings[Settings page]
+    settings -.- local[(Local storage)]
+    actions --> logout([Logout])
 ```
 
 ## Start Development
