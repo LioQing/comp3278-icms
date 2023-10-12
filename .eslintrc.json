@@ -18,5 +18,8 @@
         "react"
     ],
     "rules": {
+        "no-unused-vars": "warn",
+        "no-param-reassign": "off",
+        "no-console": "off"
     }
 }

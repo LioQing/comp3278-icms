@@ -65,7 +65,13 @@ Then replace the content with the following:
 
 ## Development
 
-To start the development server, run
+To start the development server and enable auto reload, run
+
+```bash
+npm run dev
+```
+
+To start the server normally, run
 
 ```bash
 npm start

@@ -20,6 +20,11 @@
     "noEmit": true,
     "jsx": "react-jsx"
   },
+  "eslint.options": {
+    "@typescript-eslint/no-unused-vars": "warn",
+    "@typescript-eslint/no-param-reassign": "off",
+    "no-console": "off"
+  },
   "include": [
     "src"
   ]
