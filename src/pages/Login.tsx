@@ -54,11 +54,7 @@ function Login() {
   };
 
   return (
-    <Container
-      sx={{
-        backgroundImage: `url(${process.env.PUBLIC_URL}/declared-main-building.jpg)`,
-      }}
-    >
+    <Container>
       <CssBaseline />
       <Box
         display="flex"
