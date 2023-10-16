@@ -20,6 +20,10 @@
     "rules": {
         "no-unused-vars": "warn",
         "no-param-reassign": "off",
-        "no-console": "off"
+        "no-console": "off",
+        "jsx-props-no-spreading": "off",
+        "no-array-index-key": "off",
+        "no-nested-ternary": "off",
+        "@typescript-eslint/lines-between-class-members": "off"
     }
 }

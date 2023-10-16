@@ -47,7 +47,7 @@ function Login() {
       setLoginStage(1);
     } else if (loginStage === 1) {
       // TODO: Check password/face with backend
-      navigate('/home/');
+      navigate('/timetable/');
     } else {
       console.error('Invalid login stage');
     }
@@ -73,7 +73,7 @@ function Login() {
           <br />
           System
         </Typography>
-        <Box maxWidth={500} flexBasis="100%">
+        <Box maxWidth={600} flexBasis="100%">
           <Panel>
             <Box
               sx={{
@@ -85,10 +85,10 @@ function Login() {
               <Avatar sx={{ m: 1, bgcolor: 'primary.main' }}>
                 <LockOutlinedIcon />
               </Avatar>
-              <Typography component="h1" variant="h5">
+              <Typography component="h1" variant="h5" gutterBottom>
                 Login
               </Typography>
-              <Box component="form" onSubmit={handleSubmit} width="100%" mt={1}>
+              <Box component="form" onSubmit={handleSubmit} width="100%">
                 <TextField
                   margin="normal"
                   required
@@ -138,7 +138,7 @@ function Login() {
                   justifyContent="space-between"
                   sx={{ mt: 3, mb: 2 }}
                 >
-                  <Hyperlink to="/home/">
+                  <Hyperlink to="/timetable/">
                     <Typography variant="body2" color="inherit">
                       {loginStage === 0
                         ? 'Forget username?'

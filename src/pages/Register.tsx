@@ -3,6 +3,7 @@ import Box from '@mui/material/Box';
 import Container from '@mui/material/Container';
 import CssBaseline from '@mui/material/CssBaseline';
 import AppRegistrationIcon from '@mui/icons-material/AppRegistration';
+import DoneIcon from '@mui/icons-material/Done';
 import Avatar from '@mui/material/Avatar';
 import Typography from '@mui/material/Typography';
 import TextField from '@mui/material/TextField';
@@ -17,7 +18,7 @@ interface RegisterFormProps {
 
 function RegisterForm({ handleBack, handleSubmit }: RegisterFormProps) {
   return (
-    <Box component="form" onSubmit={handleSubmit} width="100%" mt={1}>
+    <Box component="form" onSubmit={handleSubmit} width="100%">
       <TextField
         margin="normal"
         required
@@ -69,9 +70,9 @@ interface AskForFaceProps {
 
 function AskForFace({ handleNo, handleYes }: AskForFaceProps) {
   return (
-    <Box width="100%" mt={1}>
+    <Box width="100%">
       <Typography variant="body1" color="inherit">
-        Do you want to setup face login? (You can do this later)
+        Do you want to setup face login now? (You can do this later)
       </Typography>
       <Box
         display="flex"
@@ -101,7 +102,7 @@ function Register() {
     if (registerStage === 0) {
       navigate('/login/');
     } else if (registerStage === 1) {
-      navigate('/home/');
+      navigate('/timetable/');
     } else {
       console.error('Invalid register stage');
     }
@@ -114,8 +115,7 @@ function Register() {
       setRegisterStage(1);
       setTitle('Successfully Registered!');
     } else if (registerStage === 1) {
-      // TODO: Navigate to setup face login page
-      navigate('/home/');
+      navigate('/face-setup/?redirect=/timetable/');
     } else {
       console.error('Invalid register stage');
     }
@@ -132,7 +132,7 @@ function Register() {
         minHeight="100vh"
         paddingY={2}
       >
-        <Box maxWidth={500} flexBasis="100%">
+        <Box maxWidth={600} flexBasis="100%">
           <Panel>
             <Box
               sx={{
@@ -142,9 +142,9 @@ function Register() {
               }}
             >
               <Avatar sx={{ m: 1, bgcolor: 'primary.main' }}>
-                <AppRegistrationIcon />
+                {registerStage === 0 ? <AppRegistrationIcon /> : <DoneIcon />}
               </Avatar>
-              <Typography component="h1" variant="h5">
+              <Typography component="h1" variant="h5" gutterBottom>
                 {title}
               </Typography>
               {registerStage === 0 ? (

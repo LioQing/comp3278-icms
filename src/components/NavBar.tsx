@@ -8,23 +8,38 @@ import useTheme from '@mui/material/styles/useTheme';
 import { useNavigate, useLocation, Outlet } from 'react-router-dom';
 import IconButton from '@mui/material/IconButton';
 import AccountCircle from '@mui/icons-material/AccountCircle';
+import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
+import MenuBookIcon from '@mui/icons-material/MenuBook';
+import AssignmentIndIcon from '@mui/icons-material/AssignmentInd';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 import Typography from '@mui/material/Typography';
 
 const pages = [
-  ['Home', '/home/'],
-  ['Add', '/add/'],
-  ['Account', '/account/'],
+  {
+    icon: <CalendarMonthIcon key="/timetable/" />,
+    label: 'Timetable',
+    path: '/timetable/',
+  },
+  {
+    icon: <MenuBookIcon key="/courses/" />,
+    label: 'Courses',
+    path: '/courses/',
+  },
+  {
+    icon: <AssignmentIndIcon key="/account/" />,
+    label: 'Account',
+    path: '/account/',
+  },
 ];
 
-interface Props {
+interface ElevationScrollProps {
   window?: () => Window;
   children: React.ReactElement;
 }
 
-function ElevationScroll(props: Props) {
-  const { children, window } = props;
+function ElevationScroll({ children, window }: ElevationScrollProps) {
+  const theme = useTheme();
   const trigger = useScrollTrigger({
     disableHysteresis: true,
     threshold: 0,
@@ -34,7 +49,10 @@ function ElevationScroll(props: Props) {
   return React.cloneElement(children, {
     elevation: trigger ? 4 : 0,
     sx: {
-      background: trigger ? 'rgba(255, 255, 255, 0.75)' : '#f5f5f5',
+      background: trigger
+        ? `${theme.palette.background.paper}C0`
+        : theme.palette.background.default,
+      backdropFilter: 'blur(8px)',
       ...children.props.sx,
     },
   });
@@ -47,7 +65,7 @@ function NavBar() {
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
 
   const handleMenu = (event: React.MouseEvent<HTMLElement>) => {
-    setAnchorEl(event.currentTarget.parentElement!.parentElement);
+    setAnchorEl(event.currentTarget);
   };
 
   const handleClose = () => {
@@ -71,7 +89,6 @@ function NavBar() {
           position="sticky"
           sx={{
             color: 'primary.main',
-            backdropFilter: 'blur(10px)',
           }}
         >
           <Toolbar sx={{ justifyContent: 'space-between' }}>
@@ -95,7 +112,7 @@ function NavBar() {
                 justifyContent="space-evenly"
                 m={0}
               >
-                {pages.map(([name, path]) => (
+                {pages.map(({ icon, label, path }) => (
                   <Button
                     key={path}
                     sx={{
@@ -104,14 +121,23 @@ function NavBar() {
                       mx: 1,
                       backgroundColor:
                         path === location.pathname
-                          ? `${theme.palette.primary.main}26`
+                          ? `${theme.palette.primary.main}1D`
                           : undefined,
                     }}
                     onClick={() => {
                       if (path !== location.pathname) navigate(path);
                     }}
                   >
-                    {name}
+                    <Box
+                      display="flex"
+                      flexDirection="row"
+                      alignItems="center"
+                      justifyContent="center"
+                      gap={1}
+                    >
+                      {icon}
+                      {label}
+                    </Box>
                   </Button>
                 ))}
               </Box>
@@ -145,7 +171,7 @@ function NavBar() {
           horizontal: 'right',
         }}
         transformOrigin={{
-          vertical: -10,
+          vertical: 'top',
           horizontal: 'right',
         }}
         keepMounted
@@ -158,7 +184,7 @@ function NavBar() {
       </Menu>
       <Box height={24} />
       <Outlet />
-      <Box height={196} />
+      <Box height={96} />
     </>
   );
 }
