@@ -32,7 +32,6 @@ class StudentView(views.APIView):
         received_username=request.GET.get('username','')
         students = list(Student.objects.filter(username=received_username).values())
 
-        print(students)
        
         return JsonResponse(students, safe=False)
 
