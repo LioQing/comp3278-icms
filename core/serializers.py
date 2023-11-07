@@ -8,7 +8,7 @@ class PingPongSerializer(serializers.Serializer):
     ping = serializers.CharField(max_length=4)
 
 
-class StudentSerializer(serializers.Serializer):
+class StudentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Student
