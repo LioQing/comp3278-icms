@@ -1,11 +1,9 @@
 from rest_framework import permissions, response, views
 
 
-
-
 from . import serializers
 
-from django.http import JsonResponse
+from .serializers import StudentSerializer
 
 from .models import Student
 
@@ -24,13 +22,23 @@ class PingPongView(views.APIView):
         return response.Response(serializer.data)
 
 
-
 class StudentView(views.APIView):
 
-    def get(request):
+    serializer_class= StudentSerializer
 
-        received_username=request.GET.get('username','')
-        students = list(Student.objects.filter(username=received_username).values())
+    def get(self,request,*args,**kwargs):
+        received_username = self.kwargs["username"]
+        student_object = Student.objects.filter(username=received_username)
+        serializer = StudentSerializer(student_object, many =True)
+        return response.Response(serializer.data)
+
+       
+
+
+        
+
+
+
 
        
         return JsonResponse(students, safe=False)
