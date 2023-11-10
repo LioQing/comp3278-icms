@@ -13,6 +13,7 @@ import NavBar from './components/NavBar';
 import Account from './pages/Account';
 import { SettingsContext } from './contexts/Settings';
 import FaceLoginSetup from './pages/FaceLoginSetup';
+import useLocalStorage from './hooks/useLocalStorage';
 
 const lightTheme = createTheme({
   palette: {
@@ -53,7 +54,7 @@ const darkTheme = createTheme({
 } as Object);
 
 function App() {
-  const [settings, setSettings] = React.useState({
+  const [settings, setSettings] = useLocalStorage('settings', {
     darkMode: false,
   });
 

@@ -1,29 +1,27 @@
 {
-    "env": {
-        "browser": true,
-        "es2021": true
-    },
-    "extends": [
-        "airbnb",
-        "airbnb-typescript",
-        "plugin:react/recommended",
-        "prettier"
-    ],
-    "parserOptions": {
-        "project": "./tsconfig.json",
-        "ecmaVersion": "latest",
-        "sourceType": "module"
-    },
-    "plugins": [
-        "react"
-    ],
-    "rules": {
-        "no-unused-vars": "warn",
-        "no-param-reassign": "off",
-        "no-console": "off",
-        "jsx-props-no-spreading": "off",
-        "no-array-index-key": "off",
-        "no-nested-ternary": "off",
-        "@typescript-eslint/lines-between-class-members": "off"
-    }
+  "env": {
+    "browser": true,
+    "es2021": true
+  },
+  "extends": [
+    "airbnb",
+    "airbnb-typescript",
+    "plugin:react/recommended",
+    "prettier"
+  ],
+  "parserOptions": {
+    "project": "./tsconfig.json",
+    "ecmaVersion": "latest",
+    "sourceType": "module"
+  },
+  "plugins": ["react"],
+  "rules": {
+    "no-unused-vars": "warn",
+    "no-param-reassign": "off",
+    "no-console": "off",
+    "jsx-props-no-spreading": "off",
+    "no-array-index-key": "off",
+    "no-nested-ternary": "off",
+    "@typescript-eslint/lines-between-class-members": "off"
+  }
 }

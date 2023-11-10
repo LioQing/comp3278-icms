@@ -11,15 +11,50 @@ import FormControlLabel from '@mui/material/FormControlLabel';
 import Checkbox from '@mui/material/Checkbox';
 import Button from '@mui/material/Button';
 import Stack from '@mui/material/Stack';
+import Collapse from '@mui/material/Collapse';
 import { useNavigate } from 'react-router-dom';
+import LinearProgress from '@mui/material/LinearProgress';
+import Webcam from 'react-webcam';
 import Hyperlink from '../components/Hyperlink';
 import Panel from '../components/Panel';
 
 function Login() {
   const navigate = useNavigate();
 
-  // 0 - username, 1 - password/face
+  const [loading, setLoading] = React.useState(true);
+  const [camera, setCamera] = React.useState(0);
+  const [devices, setDevices] = React.useState<MediaDeviceInfo[]>([]);
+
+  // 0 - username, 1 - password, 2 - face
   const [loginStage, setLoginStage] = React.useState(0);
+
+  const videoConstraints = React.useMemo(
+    () => ({
+      deviceId: devices[camera]?.deviceId ?? devices[0]?.deviceId,
+    }),
+    [camera, devices],
+  );
+
+  const handleUserMedia = () => setLoading(false);
+
+  const handleDevices = React.useCallback(
+    (mediaDevices: MediaDeviceInfo[]) =>
+      setDevices(
+        mediaDevices.filter(
+          ({ kind }: MediaDeviceInfo) => kind === 'videoinput',
+        ),
+      ),
+    [setDevices],
+  );
+
+  React.useEffect(() => {
+    navigator.mediaDevices.enumerateDevices().then(handleDevices);
+  }, [handleDevices]);
+
+  const handleChangeCamera = () => {
+    setCamera((camera + 1) % devices.length);
+    setLoading(true);
+  };
 
   const handleRegister = () => {
     navigate('/register/');
@@ -27,6 +62,10 @@ function Login() {
 
   const handleBack = () => {
     setLoginStage(0);
+  };
+
+  const handleUseFace = () => {
+    setLoginStage(2);
   };
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
@@ -48,6 +87,8 @@ function Login() {
     } else if (loginStage === 1) {
       // TODO: Check password/face with backend
       navigate('/timetable/');
+    } else if (loginStage === 2) {
+      setLoginStage(1);
     } else {
       console.error('Invalid login stage');
     }
@@ -100,38 +141,63 @@ function Login() {
                   disabled={loginStage > 0}
                   autoFocus
                 />
-                {loginStage === 1 && (
-                  <>
-                    <TextField
-                      margin="normal"
-                      required
-                      fullWidth
-                      name="password"
-                      label="Password"
-                      type="password"
-                      id="password"
-                      autoComplete="current-password"
+                <Collapse in={loginStage === 1}>
+                  <TextField
+                    margin="normal"
+                    required={loginStage === 1}
+                    fullWidth
+                    name="password"
+                    label="Password"
+                    type="password"
+                    id="password"
+                    autoComplete="password"
+                  />
+                  <Box
+                    display="flex"
+                    flexDirection="row"
+                    justifyContent="space-between"
+                    sx={{ my: 1 }}
+                  >
+                    <FormControlLabel
+                      control={<Checkbox value="remember" color="primary" />}
+                      name="remember"
+                      label="Remember me"
+                      id="remember"
                     />
-                    <Box
-                      display="flex"
-                      flexDirection="row"
-                      justifyContent="space-between"
-                      sx={{ my: 1 }}
+                    <Button variant="contained" onClick={handleUseFace}>
+                      <FaceIcon />
+                      <Box sx={{ ml: 1 }} />
+                      Face Login
+                    </Button>
+                  </Box>
+                </Collapse>
+                <Collapse in={loginStage === 2}>
+                  <Box
+                    width="100%"
+                    display="flex"
+                    flexDirection="row"
+                    justifyContent="center"
+                  >
+                    <Button
+                      variant="outlined"
+                      onClick={handleChangeCamera}
+                      sx={{ mt: 1, mb: 2 }}
                     >
-                      <FormControlLabel
-                        control={<Checkbox value="remember" color="primary" />}
-                        name="remember"
-                        label="Remember me"
-                        id="remember"
-                      />
-                      <Button variant="contained">
-                        <FaceIcon />
-                        <Box sx={{ ml: 1 }} />
-                        Face Login
-                      </Button>
-                    </Box>
-                  </>
-                )}
+                      Change Camera
+                    </Button>
+                  </Box>
+                  <Collapse in={loading}>
+                    <LinearProgress sx={{ my: 2, width: '100%' }} />
+                  </Collapse>
+                  <Box sx={{ borderRadius: '8px', overflow: 'hidden' }}>
+                    <Webcam
+                      width="100%"
+                      style={{ display: 'flex' }}
+                      videoConstraints={videoConstraints}
+                      onUserMedia={handleUserMedia}
+                    />
+                  </Box>
+                </Collapse>
                 <Box
                   display="flex"
                   flexDirection="row"
@@ -153,7 +219,11 @@ function Login() {
                       {loginStage === 0 ? 'Register' : 'Back'}
                     </Button>
                     <Button type="submit" variant="contained">
-                      {loginStage === 0 ? 'Next' : 'Login'}
+                      {loginStage === 0
+                        ? 'Next'
+                        : loginStage === 1
+                        ? 'Login'
+                        : 'Password'}
                     </Button>
                   </Stack>
                 </Box>

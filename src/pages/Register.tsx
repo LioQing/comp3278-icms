@@ -26,6 +26,7 @@ function RegisterForm({ handleBack, handleSubmit }: RegisterFormProps) {
         id="username"
         label="Username"
         name="username"
+        autoComplete="new-password"
         autoFocus
       />
       <TextField
@@ -36,6 +37,7 @@ function RegisterForm({ handleBack, handleSubmit }: RegisterFormProps) {
         label="Password"
         type="password"
         id="password"
+        autoComplete="new-password"
       />
       <TextField
         margin="normal"
@@ -45,6 +47,7 @@ function RegisterForm({ handleBack, handleSubmit }: RegisterFormProps) {
         label="Confirm Password"
         type="password"
         id="confirm-password"
+        autoComplete="new-password"
       />
       <Box
         display="flex"
@@ -71,7 +74,7 @@ interface AskForFaceProps {
 function AskForFace({ handleNo, handleYes }: AskForFaceProps) {
   return (
     <Box width="100%">
-      <Typography variant="body1" color="inherit">
+      <Typography variant="body1" color="inherit" textAlign="center">
         Do you want to setup face login now? (You can do this later)
       </Typography>
       <Box

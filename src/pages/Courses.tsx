@@ -59,10 +59,7 @@ function Courses() {
   const [sessionDetail, setSession] = React.useState<Session | null>(
     initialSession,
   );
-  const [sessionPanelHeight, setSessionPanelHeight] = React.useState<number>(0);
-  const sessionPanelRef = React.useRef<HTMLDivElement>(null);
   const [opened, setOpened] = React.useState<boolean>(initialCourse !== null);
-  const [height, setHeight] = React.useState<number>(0);
   const prevCourse = usePrevious(course);
   const openedCourseRef = React.useRef<HTMLDivElement>(null);
   const courseListRef = React.useRef<HTMLDivElement>(null);
@@ -86,16 +83,6 @@ function Courses() {
     }
   }, [opened, course]);
 
-  // Handle session
-  React.useLayoutEffect(() => {
-    if (sessionDetail && sessionPanelRef.current) {
-      const panel = sessionPanelRef.current;
-      setSessionPanelHeight(panel.offsetHeight);
-    } else {
-      setSessionPanelHeight(0);
-    }
-  }, [sessionDetail, sessionPanelRef]);
-
   // Handle url for state changes
   React.useEffect(() => {
     if (prevCourse === undefined) {
@@ -110,16 +97,6 @@ function Courses() {
       }`,
     );
   }, [course, sessionDetail, history]);
-
-  // Handle pre-render total height change
-  React.useLayoutEffect(() => {
-    setHeight(
-      Math.max(
-        openedCourseRef.current?.clientHeight ?? 0,
-        courseListRef.current?.clientHeight ?? 0,
-      ),
-    );
-  }, [course, sessionDetail, opened, openedCourseRef, courseListRef]);
 
   const courseList = (
     <Box
@@ -189,8 +166,6 @@ function Courses() {
           withinOneHour={course?.code === withinOneHourCourse?.name}
           session={sessionDetail}
           setSession={setSession}
-          sessionPanelHeight={sessionPanelHeight}
-          sessionPanelRef={sessionPanelRef}
           opened={opened}
           onClose={() => setOpened(false)}
         />
@@ -201,7 +176,7 @@ function Courses() {
   return (
     <Container>
       <CssBaseline />
-      <Box height={height} position="relative">
+      <Box position="relative">
         {courseList}
         {openedCourse}
       </Box>

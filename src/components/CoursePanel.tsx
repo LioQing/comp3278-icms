@@ -24,8 +24,6 @@ export interface CoursePanelProps {
   withinOneHour: boolean;
   session: Session | null;
   setSession: React.Dispatch<Session | null>;
-  sessionPanelHeight: number;
-  sessionPanelRef: React.RefObject<HTMLDivElement>;
   opened: boolean;
   onClose: () => void;
 }
@@ -35,15 +33,25 @@ function CoursePanel({
   withinOneHour,
   session,
   setSession,
-  sessionPanelHeight,
-  sessionPanelRef,
   opened,
   onClose,
 }: CoursePanelProps) {
+  const sessionPanelRef = React.useRef<HTMLDivElement>(null);
+  const [sessionHeight, setSessionHeight] = React.useState<number>(0);
+
   const handleSessionSelection = (event: SelectChangeEvent) => {
     const value = event.target.value as string;
     setSession(getSession(course, value));
   };
+
+  // Handle session panel height
+  React.useLayoutEffect(() => {
+    if (session && sessionPanelRef.current) {
+      setSessionHeight(sessionPanelRef.current.offsetHeight);
+    } else {
+      setSessionHeight(0);
+    }
+  }, [session, sessionPanelRef]);
 
   const sessionPanel = (
     <Box ref={sessionPanelRef}>
@@ -56,47 +64,50 @@ function CoursePanel({
   );
 
   return (
-    <Panel
-      title={course?.code}
-      trailing={
-        <IconButton onClick={onClose}>
-          <CloseIcon />
-        </IconButton>
-      }
-      sx={{
-        opacity: opened ? 1 : 0,
-        transition,
-      }}
-    >
-      {withinOneHour && (
-        <Box display="flex" flexDirection="row" mb={1}>
-          <CourseBadge text="<1h" />
-        </Box>
-      )}
-      {course && <Typography>{course.description}</Typography>}
-      <FormControl sx={{ my: 2, minWidth: 200 }}>
-        <InputLabel id="select-session-label">Session</InputLabel>
-        <Select
-          labelId="select-session-label"
-          id="select-session"
-          value={session ? getStartTime(session) : ''}
-          label="Session"
-          onChange={handleSessionSelection}
-        >
-          <MenuItem value="">
-            <em>None</em>
-          </MenuItem>
-          {course?.sessions.map((c) => (
-            <MenuItem key={formatDatetime(c)} value={formatDatetime(c)}>
-              {formatDatetime(c)}
+    <>
+      <Panel
+        title={course?.code}
+        trailing={
+          <IconButton onClick={onClose}>
+            <CloseIcon />
+          </IconButton>
+        }
+        sx={{
+          opacity: opened ? 1 : 0,
+          transition,
+        }}
+      >
+        {withinOneHour && (
+          <Box display="flex" flexDirection="row" mb={1}>
+            <CourseBadge text="<1h" />
+          </Box>
+        )}
+        {course && <Typography>{course.description}</Typography>}
+        <FormControl sx={{ my: 2, minWidth: 200 }}>
+          <InputLabel id="select-session-label">Session</InputLabel>
+          <Select
+            labelId="select-session-label"
+            id="select-session"
+            value={session ? getStartTime(session) : ''}
+            label="Session"
+            onChange={handleSessionSelection}
+          >
+            <MenuItem value="">
+              <em>None</em>
             </MenuItem>
-          ))}
-        </Select>
-      </FormControl>
-      <Box height={sessionPanelHeight} sx={{ overflow: 'hidden', transition }}>
-        {session && sessionPanel}
-      </Box>
-    </Panel>
+            {course?.sessions.map((c) => (
+              <MenuItem key={formatDatetime(c)} value={formatDatetime(c)}>
+                {formatDatetime(c)}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+        <Box height={sessionHeight} sx={{ overflow: 'hidden', transition }}>
+          {session && sessionPanel}
+        </Box>
+      </Panel>
+      <Box height={96} />
+    </>
   );
 }
 
