@@ -1,5 +1,6 @@
 from rest_framework import serializers
-from .models import Student
+
+from .models import Record, Student
 
 
 class PingPongSerializer(serializers.Serializer):
@@ -9,7 +10,12 @@ class PingPongSerializer(serializers.Serializer):
 
 
 class StudentSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = Student
+        fields = "__all__"
+
+
+class RecordSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Record
         fields = "__all__"

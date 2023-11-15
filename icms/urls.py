@@ -24,7 +24,7 @@ import core.urls
 
 urlpatterns = [
     path("", include(core.urls)),
-    path('admin/', admin.site.urls),
+    path("admin/", admin.site.urls),
     path("schema/", SpectacularAPIView.as_view(), name="schema"),
     path(
         "schema/swagger-ui/",
