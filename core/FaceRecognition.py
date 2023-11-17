@@ -43,7 +43,7 @@ def train_model():
     recognizer.save("train.yml")
 
 
-def isCorrectFace(student_id,conf, image): #needa convert image into ndarray first
+def isCorrectFace(student_id, image): #needa convert image into ndarray first (image here is a ndarray)
     recognizer = cv2.face.LBPHFaceRecognizer_create() 
     recognizer.read("train.yml")
 
@@ -52,7 +52,7 @@ def isCorrectFace(student_id,conf, image): #needa convert image into ndarray fir
         labels = pickle.load(f)
         labels = {v: k for k, v in labels.items()} #username and id mapping
     
-    face_cascade = cv2.CascadeClassifier('haarcascade/haarcascade_frontalface_default.xml')
+    face_cascade = cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
 
     faces = face_cascade.detectMultiScale(image, scaleFactor=1.5, minNeighbors=5)
 
