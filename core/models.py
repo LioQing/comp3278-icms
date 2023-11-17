@@ -19,20 +19,13 @@ class Record(models.Model):
     message = models.CharField(max_length=100)
 
     class Meta:
-        unique_together = (("student", "record_id"),)
+        unique_together = (("student_id", "record_id"),)
 
 
 class Course(models.Model):
     course_code = models.CharField(max_length=10, primary_key=True)
     course_name = models.CharField(max_length=100)
-
-
-class TakeCourse(models.Model):
-    course_code = models.ForeignKey(Course, on_delete=models.CASCADE)
-    student_id = models.ForeignKey(Student, on_delete=models.CASCADE)
-
-    class Meta:
-        unique_together = (("course_code", "student_id"),)
+    student_id = models.ManyToManyField(Student)
 
 
 class Session(models.Model):
