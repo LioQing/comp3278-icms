@@ -6,8 +6,10 @@ distlib==0.3.7
 Django==4.2.5
 django-cors-headers==4.2.0
 djangorestframework==3.14.0
+drf-extra-fields==3.7.0
 drf-spectacular==0.26.5
 filelock==3.12.4
+filetype==1.2.0
 flake8==4.0.1
 flake8-docstrings==1.6.0
 identify==2.5.29
@@ -18,6 +20,10 @@ jsonschema-specifications==2023.7.1
 mccabe==0.6.1
 mysqlclient==2.2.0
 nodeenv==1.8.0
+numpy==1.26.2
+opencv-contrib-python==4.8.1.78
+opencv-python==4.8.1.78
+Pillow==10.1.0
 platformdirs==3.10.0
 pre-commit==2.17.0
 pycodestyle==2.8.0
@@ -37,7 +43,3 @@ toml==0.10.2
 typing_extensions==4.7.1
 uritemplate==4.1.1
 virtualenv==20.24.5
-numpy
-opencv-python
-opencv-contrib-python
-Pillow

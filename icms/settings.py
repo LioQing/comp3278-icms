@@ -29,12 +29,12 @@ ALLOWED_HOSTS = django_config.allowed_hosts
 # Application definition
 
 INSTALLED_APPS = [
-    "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "rest_framework.authtoken",
     "corsheaders",
     "rest_framework",
     "core.apps.CoreConfig",
@@ -55,6 +55,11 @@ MIDDLEWARE = [
 CORS_ORIGIN_WHITELIST = ["http://localhost:3000"]
 
 ROOT_URLCONF = "icms.urls"
+
+MEDIA_ROOT = BASE_DIR / django_config.media_root
+MEDIA_URL = django_config.media_url
+
+AUTH_USER_MODEL = "core.Student"
 
 TEMPLATES = [
     {
@@ -94,16 +99,19 @@ AUTH_PASSWORD_VALIDATORS = [
         ),
     },
     {
-        "NAME": ("django.contrib.auth.password_validation."
-                 "MinimumLengthValidator"),
+        "NAME": (
+            "django.contrib.auth.password_validation.MinimumLengthValidator"
+        ),
     },
     {
-        "NAME": ("django.contrib.auth.password_validation."
-                 "CommonPasswordValidator"),
+        "NAME": (
+            "django.contrib.auth.password_validation.CommonPasswordValidator"
+        ),
     },
     {
-        "NAME": ("django.contrib.auth.password_validation."
-                 "NumericPasswordValidator"),
+        "NAME": (
+            "django.contrib.auth.password_validation.NumericPasswordValidator"
+        ),
     },
 ]
 
@@ -113,7 +121,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = "en-us"
 
-TIME_ZONE = "UTC"
+TIME_ZONE = "Asia/Hong_Kong"
 
 USE_I18N = True
 
@@ -133,6 +141,10 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 # REST framework
 REST_FRAMEWORK = {
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+    "DEFAULT_AUTHENTICATION_CLASSES": [
+        "rest_framework.authentication.BasicAuthentication",
+        "rest_framework.authentication.TokenAuthentication",
+    ],
 }
 
 # DRF spectacular settings
@@ -144,3 +156,5 @@ SPECTACULAR_SETTINGS = {
     "COMPONENT_SPLIT_REQUEST": True,
     "ENFORCE_NON_BLANK_FIELDS": True,
 }
+
+DATA_UPLOAD_MAX_NUMBER_FIELDS = None
