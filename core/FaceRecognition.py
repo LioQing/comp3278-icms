@@ -53,16 +53,16 @@ def isCorrectFace(student_id, image): #needa convert image into ndarray first (i
         labels = {v: k for k, v in labels.items()} #username and id mapping
     
     face_cascade = cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
-
-    faces = face_cascade.detectMultiScale(image, scaleFactor=1.5, minNeighbors=5)
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    faces = face_cascade.detectMultiScale(gray, scaleFactor=1.5, minNeighbors=5)
 
     isInThePhoto = False
 
     for (x, y, w, h) in faces:
         print(x, w, y, h)
-        roi_color = image[y:y + h, x:x + w]
+        roi_gray = gray[y:y + h, x:x + w]
         # predict the id and confidence for faces
-        id_, conf = recognizer.predict(roi_color)
+        id_, conf = recognizer.predict(roi_gray)
         if str(student_id) == labels[id_] and conf>27:
             isInThePhoto = True
             break
