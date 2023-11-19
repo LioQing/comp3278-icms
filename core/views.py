@@ -202,7 +202,7 @@ class ApiTimetableView(views.APIView):
         # Get the date of the sunday of the week
         sunday = date
         if date.weekday() != 6:
-            sunday = date - datetime.timedelta(days=date.weekday())
+            sunday = date - datetime.timedelta(days=date.weekday() + 1)
 
         # Get the sessions with their course info for the week
         sessions = models.Session.objects.raw(
