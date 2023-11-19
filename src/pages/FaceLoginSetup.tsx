@@ -8,22 +8,29 @@ import Webcam from 'react-webcam';
 import Avatar from '@mui/material/Avatar';
 import LinearProgress from '@mui/material/LinearProgress';
 import Typography from '@mui/material/Typography';
+import { useTheme } from '@mui/material';
 import SentimentSatisfiedAltIcon from '@mui/icons-material/SentimentSatisfiedAlt';
 import Panel from '../components/Panel';
 import useQuery from '../hooks/useQuery';
+import useAxios from '../hooks/useAxios';
+import { postSetupFace } from '../models/SetupFace';
 
 function FaceLoginSetup() {
+  const theme = useTheme();
   const redirect = useQuery().get('redirect') ?? '/timetable/';
   const navigate = useNavigate();
   const [loading, setLoading] = React.useState(true);
   const [camera, setCamera] = React.useState(0);
+  const [faces, setFaces] = React.useState<string[]>([]);
   const [devices, setDevices] = React.useState<MediaDeviceInfo[]>([]);
-  const [progress, setProgress] = React.useState<number | null | 'complete'>(
-    null,
-  );
+  const [progress, setProgress] = React.useState<
+    number | null | 'complete' | 'success'
+  >(null);
+  const [error, setError] = React.useState<string | null>(null);
   const [progressTimer, setProgressTimer] = React.useState<NodeJS.Timer | null>(
     null,
   );
+  const webcamRef = React.useRef<Webcam>(null);
 
   const videoConstraints = React.useMemo(
     () => ({
@@ -31,6 +38,29 @@ function FaceLoginSetup() {
     }),
     [camera, devices],
   );
+
+  const setupFaceClient = useAxios();
+
+  React.useEffect(() => {
+    if (!setupFaceClient.response) return;
+
+    if (setupFaceClient.response.status === 200) {
+      setProgress('success');
+      setError(null);
+    }
+  }, [setupFaceClient.response]);
+
+  React.useEffect(() => {
+    if (!setupFaceClient.error) return;
+
+    setProgress(null);
+    const data: any = setupFaceClient.error.response?.data;
+    if (data.images) {
+      setError(data.images);
+    } else {
+      setError(setupFaceClient.error.message);
+    }
+  }, [setupFaceClient.error]);
 
   const handleUserMedia = () => setLoading(false);
 
@@ -50,13 +80,22 @@ function FaceLoginSetup() {
   };
 
   const handleConfirm = () => {
+    const imageSrc = webcamRef.current?.getScreenshot();
+    if (!imageSrc) return;
+
     const progressTime = 3000;
-    const interval = 500;
+    const interval = 100;
     setProgress(0);
+    setFaces([]);
+    setError(null);
     setProgressTimer(
       setInterval(() => {
         setProgress((oldProgress) => {
-          if (oldProgress === null || oldProgress === 'complete') {
+          if (
+            oldProgress === null ||
+            oldProgress === 'complete' ||
+            oldProgress === 'success'
+          ) {
             return null;
           }
 
@@ -64,8 +103,15 @@ function FaceLoginSetup() {
             return 'complete';
           }
 
-          const diff =
-            (Math.random() * 0.5 + 0.75) * (interval / progressTime) * 100;
+          const imageSrc = webcamRef.current?.getScreenshot();
+          if (!imageSrc) {
+            setError('Failed to capture image');
+            return null;
+          }
+
+          setFaces((oldFaces) => [...oldFaces, imageSrc]);
+
+          const diff = (interval / progressTime) * 100;
           return Math.min(oldProgress + diff, 100);
         });
       }, interval),
@@ -75,6 +121,12 @@ function FaceLoginSetup() {
   React.useEffect(() => {
     if (progress === 'complete') {
       clearInterval(progressTimer as NodeJS.Timer);
+      setupFaceClient.sendRequest(
+        postSetupFace({
+          images: faces,
+        }),
+      );
+      setFaces([]);
     }
   }, [progress]);
 
@@ -114,14 +166,25 @@ function FaceLoginSetup() {
               Change Camera
             </Button>
             {loading && <LinearProgress sx={{ my: 2, width: '100%' }} />}
-            <Box sx={{ borderRadius: '8px', overflow: 'hidden' }}>
+            <Box
+              sx={{ borderRadius: '8px', overflow: 'hidden' }}
+              border={error ? '1px solid' : undefined}
+              borderColor={error ? theme.palette.error.main : undefined}
+            >
               <Webcam
+                ref={webcamRef}
                 width="100%"
                 style={{ display: 'flex' }}
                 videoConstraints={videoConstraints}
                 onUserMedia={handleUserMedia}
+                screenshotFormat="image/jpeg"
               />
             </Box>
+            {error && (
+              <Typography variant="body2" color="error" textAlign="center">
+                {error}
+              </Typography>
+            )}
             {progress === null ? (
               <>
                 <Typography variant="body2" textAlign="center">
@@ -142,7 +205,7 @@ function FaceLoginSetup() {
                   </Button>
                 </Box>
               </>
-            ) : progress === 'complete' ? (
+            ) : progress === 'success' ? (
               <>
                 <Typography variant="body2" textAlign="center">
                   Face login setup complete!
@@ -152,6 +215,13 @@ function FaceLoginSetup() {
                 <Button variant="contained" onClick={() => navigate(redirect)}>
                   Done
                 </Button>
+              </>
+            ) : progress === 'complete' ? (
+              <>
+                <LinearProgress sx={{ my: 2, width: '100%' }} />
+                <Typography variant="body2" textAlign="center">
+                  Please wait while we build your ID...
+                </Typography>
               </>
             ) : (
               <LinearProgress

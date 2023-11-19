@@ -7,26 +7,44 @@ import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import React from 'react';
 import Typography from '@mui/material/Typography';
 import TextField from '@mui/material/TextField';
-import FormControlLabel from '@mui/material/FormControlLabel';
-import Checkbox from '@mui/material/Checkbox';
 import Button from '@mui/material/Button';
-import Stack from '@mui/material/Stack';
 import Collapse from '@mui/material/Collapse';
 import { useNavigate } from 'react-router-dom';
 import LinearProgress from '@mui/material/LinearProgress';
 import Webcam from 'react-webcam';
-import Hyperlink from '../components/Hyperlink';
+import { useTheme } from '@mui/material';
+import { useCookies } from 'react-cookie';
 import Panel from '../components/Panel';
+import useAxios from '../hooks/useAxios';
+import { LoginUsername, postLoginUsername } from '../models/LoginUsername';
+import { postLogin, Login as LoginResponse } from '../models/Login';
+import {
+  FaceLogin,
+  FaceLoginRequest,
+  postFaceLogin,
+} from '../models/FaceLogin';
 
 function Login() {
   const navigate = useNavigate();
 
-  const [loading, setLoading] = React.useState(true);
+  const theme = useTheme();
+  const [, setCookies] = useCookies();
+  const [loading, setLoading] = React.useState(false);
   const [camera, setCamera] = React.useState(0);
   const [devices, setDevices] = React.useState<MediaDeviceInfo[]>([]);
+  const [usernameError, setUsernameError] = React.useState<string | null>(null);
+  const [passwordError, setPasswordError] = React.useState<string | null>(null);
+  const [webcamError, setWebcamError] = React.useState<string | null>(null);
+  const webcamRef = React.useRef<Webcam>(null);
 
   // 0 - username, 1 - password, 2 - face
   const [loginStage, setLoginStage] = React.useState(0);
+
+  const clearAllErrors = () => {
+    setUsernameError(null);
+    setPasswordError(null);
+    setWebcamError(null);
+  };
 
   const videoConstraints = React.useMemo(
     () => ({
@@ -34,6 +52,112 @@ function Login() {
     }),
     [camera, devices],
   );
+
+  const loginUsernameClient = useAxios<LoginUsername>();
+
+  React.useEffect(() => {
+    if (loginStage !== 0 || !loginUsernameClient.response) return;
+
+    if (loginUsernameClient.response.status === 200) {
+      setLoginStage(1);
+      clearAllErrors();
+    }
+  }, [loginUsernameClient.response]);
+
+  React.useEffect(() => {
+    if (loginStage !== 0 || !loginUsernameClient.error) return;
+
+    if (loginUsernameClient.error.response?.status === 401) {
+      setUsernameError("Username doesn't exist");
+    } else {
+      console.log(loginUsernameClient.error);
+      const data: any = loginUsernameClient.error.response?.data;
+      if (data.detail) {
+        setUsernameError(data.detail);
+      } else if (data.username) {
+        setUsernameError(data.username[0]);
+      } else {
+        setUsernameError(loginUsernameClient.error.message);
+      }
+    }
+  }, [loginUsernameClient.error]);
+
+  React.useEffect(() => {
+    setLoading(loginUsernameClient.loading);
+  }, [loginUsernameClient.loading]);
+
+  const loginClient = useAxios<LoginResponse>();
+
+  React.useEffect(() => {
+    if (loginStage !== 1 || !loginClient.response) return;
+
+    if (loginClient.response.status === 200) {
+      setCookies('auth-token', loginClient.response.data.auth_token, {
+        path: '/',
+      });
+      navigate('/');
+    }
+  }, [loginClient.response]);
+
+  React.useEffect(() => {
+    if (loginStage !== 1 || !loginClient.error) return;
+
+    if (loginClient.error.response?.status === 401) {
+      setPasswordError('Incorrect password');
+    } else {
+      const data: any = loginClient.error.response?.data;
+      if (data.detail) {
+        setPasswordError(data.detail);
+      } else {
+        setPasswordError(loginClient.error.message);
+      }
+    }
+  }, [loginClient.error]);
+
+  React.useEffect(() => {
+    setLoading(loginClient.loading);
+  }, [loginClient.loading]);
+
+  const faceLoginClient = useAxios<FaceLogin, FaceLoginRequest>();
+
+  React.useEffect(() => {
+    if (loginStage !== 2 || !faceLoginClient.response) return;
+
+    if (faceLoginClient.response.status === 200) {
+      setCookies('auth-token', faceLoginClient.response.data.auth_token, {
+        path: '/',
+      });
+      navigate('/');
+    }
+  }, [faceLoginClient.response]);
+
+  React.useEffect(() => {
+    if (loginStage !== 2 || !faceLoginClient.error) return;
+
+    if (faceLoginClient.error.response?.status === 401) {
+      const imageSrc = webcamRef.current?.getScreenshot();
+      if (!imageSrc) return;
+
+      if (!faceLoginClient.request?.data?.username) {
+        setWebcamError('An error occurred');
+        return;
+      }
+
+      faceLoginClient.sendRequest(
+        postFaceLogin({
+          username: faceLoginClient.request?.data?.username,
+          image: imageSrc,
+        }),
+      );
+    } else {
+      const data: any = faceLoginClient.error.response?.data;
+      if (data.detail) {
+        setWebcamError(data.detail);
+      } else {
+        setWebcamError(faceLoginClient.error.message);
+      }
+    }
+  }, [faceLoginClient.error]);
 
   const handleUserMedia = () => setLoading(false);
 
@@ -61,10 +185,12 @@ function Login() {
   };
 
   const handleBack = () => {
-    setLoginStage(0);
+    clearAllErrors();
+    setLoginStage(loginStage - 1);
   };
 
   const handleUseFace = () => {
+    clearAllErrors();
     setLoginStage(2);
   };
 
@@ -73,22 +199,30 @@ function Login() {
 
     event.currentTarget.username.disabled = false;
     const data = new FormData(event.currentTarget);
-    event.currentTarget.username.disabled = true;
-
-    console.log({
-      username: data.get('username'),
-      password: data.get('password'),
-      remember: data.get('remember'),
-    });
 
     if (loginStage === 0) {
-      // TODO: Check username with backend
-      setLoginStage(1);
+      loginUsernameClient.sendRequest(
+        postLoginUsername({ username: data.get('username') as string }),
+      );
     } else if (loginStage === 1) {
-      // TODO: Check password/face with backend
-      navigate('/timetable/');
+      event.currentTarget.username.disabled = true;
+      loginClient.sendRequest(
+        postLogin({
+          username: data.get('username') as string,
+          password: data.get('password') as string,
+        }),
+      );
     } else if (loginStage === 2) {
-      setLoginStage(1);
+      event.currentTarget.username.disabled = true;
+      const imageSrc = webcamRef.current?.getScreenshot();
+      if (!imageSrc) return;
+
+      faceLoginClient.sendRequest(
+        postFaceLogin({
+          username: data.get('username') as string,
+          image: imageSrc,
+        }),
+      );
     } else {
       console.error('Invalid login stage');
     }
@@ -139,7 +273,9 @@ function Login() {
                   name="username"
                   autoComplete="username"
                   disabled={loginStage > 0}
-                  autoFocus
+                  autoFocus={loginStage === 0}
+                  error={!!usernameError}
+                  helperText={usernameError}
                 />
                 <Collapse in={loginStage === 1}>
                   <TextField
@@ -151,6 +287,9 @@ function Login() {
                     type="password"
                     id="password"
                     autoComplete="password"
+                    autoFocus={loginStage === 1}
+                    error={!!passwordError}
+                    helperText={passwordError}
                   />
                   <Box
                     display="flex"
@@ -158,12 +297,6 @@ function Login() {
                     justifyContent="space-between"
                     sx={{ my: 1 }}
                   >
-                    <FormControlLabel
-                      control={<Checkbox value="remember" color="primary" />}
-                      name="remember"
-                      label="Remember me"
-                      id="remember"
-                    />
                     <Button variant="contained" onClick={handleUseFace}>
                       <FaceIcon />
                       <Box sx={{ ml: 1 }} />
@@ -186,46 +319,58 @@ function Login() {
                       Change Camera
                     </Button>
                   </Box>
-                  <Collapse in={loading}>
-                    <LinearProgress sx={{ my: 2, width: '100%' }} />
-                  </Collapse>
-                  <Box sx={{ borderRadius: '8px', overflow: 'hidden' }}>
-                    <Webcam
-                      width="100%"
-                      style={{ display: 'flex' }}
-                      videoConstraints={videoConstraints}
-                      onUserMedia={handleUserMedia}
-                    />
+                  <Box
+                    sx={{ borderRadius: '8px', overflow: 'hidden' }}
+                    border={webcamError ? '1px solid' : undefined}
+                    borderColor={
+                      webcamError ? theme.palette.error.main : undefined
+                    }
+                  >
+                    {loginStage === 2 && (
+                      <Webcam
+                        ref={webcamRef}
+                        width="100%"
+                        style={{ display: 'flex' }}
+                        videoConstraints={videoConstraints}
+                        onUserMedia={handleUserMedia}
+                      />
+                    )}
                   </Box>
+                  {webcamError && (
+                    <Typography
+                      variant="body2"
+                      color="error"
+                      textAlign="center"
+                      sx={{ mt: 1 }}
+                    >
+                      {webcamError}
+                    </Typography>
+                  )}
                 </Collapse>
+                {loading && <LinearProgress sx={{ my: 2, width: '100%' }} />}
                 <Box
                   display="flex"
                   flexDirection="row"
                   justifyContent="space-between"
                   sx={{ mt: 3, mb: 2 }}
                 >
-                  <Hyperlink to="/timetable/">
-                    <Typography variant="body2" color="inherit">
-                      {loginStage === 0
-                        ? 'Forget username?'
-                        : 'Forget password?'}
-                    </Typography>
-                  </Hyperlink>
-                  <Stack direction="row" spacing={2}>
+                  {loginStage > 0 ? (
                     <Button
                       variant="outlined"
                       onClick={loginStage === 0 ? handleRegister : handleBack}
                     >
                       {loginStage === 0 ? 'Register' : 'Back'}
                     </Button>
-                    <Button type="submit" variant="contained">
-                      {loginStage === 0
-                        ? 'Next'
-                        : loginStage === 1
-                        ? 'Login'
-                        : 'Password'}
-                    </Button>
-                  </Stack>
+                  ) : (
+                    <Box />
+                  )}
+                  <Button type="submit" variant="contained">
+                    {loginStage === 0
+                      ? 'Next'
+                      : loginStage === 1
+                      ? 'Login'
+                      : 'Password'}
+                  </Button>
                 </Box>
               </Box>
             </Box>

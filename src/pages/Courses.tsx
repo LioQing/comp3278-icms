@@ -5,72 +5,105 @@ import Box from '@mui/material/Box';
 import Panel from '../components/Panel';
 import CourseList from '../components/CourseList';
 import CoursePanel from '../components/CoursePanel';
-import Course from '../models/Course';
-import Session, { getSession, getStartTime } from '../models/Session';
 import usePrevious from '../hooks/usePrevious';
 import useQuery from '../hooks/useQuery';
-
-// TODO: Delete this
-const exampleCourse = {
-  code: 'COMP3278',
-  description:
-    '//TODO: Course details & Material. \nLorem ipsum dolor sit amet, consectetur adipiscing elit. Mauris massa enim, dapibus a eros feugiat, lobortis volutpat tellus. Vestibulum commodo nulla sit amet congue ultrices. Phasellus volutpat finibus tortor, a interdum elit ultrices vel. Ut feugiat placerat tristique. Aenean ultrices, velit non tempus pellentesque, felis sem pretium urna, vel vulputate arcu leo eget lorem. In volutpat metus et eros tempor iaculis. Sed ut tempus nisi. Morbi est felis, dapibus quis neque non, porttitor molestie risus. Sed interdum massa vel quam ornare luctus. Praesent fringilla a purus id consectetur. Sed vitae egestas nulla. Praesent at nunc at mi convallis commodo. Proin ornare vehicula elit a fringilla. Donec ac felis sit amet eros sollicitudin vestibulum sit amet in mauris. Maecenas vulputate eu sapien ut semper.\n Nam sagittis faucibus efficitur. Vivamus interdum vehicula gravida. Sed vulputate arcu feugiat, sodales neque at, dictum metus. Maecenas aliquet elit augue, sit amet ornare justo aliquam in. Fusce magna lectus, sollicitudin non massa in, vestibulum consequat leo. Nulla vehicula enim efficitur massa lacinia, non faucibus lorem porta. In in volutpat ante, sit amet viverra arcu. Aenean et enim ligula. Fusce consequat sodales pharetra. Proin porta ac metus at pharetra. Sed posuere vestibulum laoreet. Mauris tristique sapien et diam lacinia blandit. Vestibulum ipsum velit, hendrerit id ligula sit amet, mattis tempor tortor.\nPraesent quis aliquet libero, sagittis pulvinar magna. Nam semper commodo arcu, ac elementum ex semper ut. Suspendisse vel faucibus nibh. Donec ut eros vitae odio tincidunt hendrerit. Proin leo purus, vehicula sed lectus et, faucibus lacinia leo. Vestibulum mollis vehicula malesuada. Proin lobortis velit arcu.',
-  sessions: (() => {
-    const d = new Date();
-    d.setDate(d.getDate() - d.getDay());
-    d.setHours(12, 30);
-
-    const d1 = new Date();
-    d1.setDate(d1.getDate() - d1.getDay() + 2);
-    d1.setHours(8, 30);
-    return [d, d1];
-  })(),
-} as Course;
+import useAxios from '../hooks/useAxios';
+import {
+  CourseCurrent,
+  CourseCurrentInfo,
+  getCourseCurrent,
+} from '../models/CourseCurrent';
+import { CourseDetails, getCourseDetails } from '../models/CourseDetails';
+import { SessionDetails, getSessionDetails } from '../models/SessionDetails';
 
 const transition = 'all 250ms cubic-bezier(0.4, 0, 0.2, 1)';
-
-function getCourse(code: string | null): Course | null {
-  if (
-    code === null ||
-    ['COMP3278', 'COMP3230', 'COMP3297', 'CENG9001'].indexOf(code) === -1
-  ) {
-    return null;
-  }
-
-  // TODO: Get course details from backend
-  if (code === exampleCourse.code) {
-    return exampleCourse;
-  }
-
-  return { code, description: exampleCourse.description, sessions: [] };
-}
 
 function Courses() {
   const history = React.useMemo(() => window.history, []);
   const query = useQuery();
-  const initialCourse = getCourse(query.get('course'));
-  const initialSession = getSession(initialCourse, query.get('session') ?? '');
-  // TODO: Get student course details from backend
-  const [course, setCourse] = React.useState<Course | null>(initialCourse);
-  const withinOneHourCourse = getSession(
-    exampleCourse,
-    exampleCourse.sessions[0],
+  const [courseId, setCourseId] = React.useState<number | null>(() => {
+    const id = query.get('course');
+    if (id === null) return null;
+    return parseInt(id, 10);
+  });
+  const [course, setCourse] = React.useState<CourseDetails | null>(null);
+  const [current, setCurrent] = React.useState<CourseCurrentInfo[]>([]);
+  const [withinOneHour, setWithinOneHour] = React.useState<CourseCurrentInfo[]>(
+    [],
   );
-  const [sessionDetail, setSession] = React.useState<Session | null>(
-    initialSession,
-  );
-  const [opened, setOpened] = React.useState<boolean>(initialCourse !== null);
+  const [sessionId, setSessionId] = React.useState<number | null>(() => {
+    const id = query.get('session');
+    if (id === null) return null;
+    return parseInt(id, 10);
+  });
+  const [session, setSession] = React.useState<SessionDetails | null>(null);
+  const [opened, setOpened] = React.useState<boolean>(courseId !== null);
   const prevCourse = usePrevious(course);
   const openedCourseRef = React.useRef<HTMLDivElement>(null);
   const courseListRef = React.useRef<HTMLDivElement>(null);
 
-  const setOpenedCourse = (c: string) => {
-    if (c === course?.code) {
+  const courseCurrentClient = useAxios<CourseCurrent>();
+
+  React.useEffect(() => {
+    courseCurrentClient.sendRequest(getCourseCurrent());
+  }, []);
+
+  React.useEffect(() => {
+    if (!courseCurrentClient.response) return;
+
+    if (courseCurrentClient.response.status === 200) {
+      setCurrent(courseCurrentClient.response.data.current);
+      setWithinOneHour(courseCurrentClient.response.data.within_one_hour);
+    }
+  }, [courseCurrentClient.response]);
+
+  const courseDetailsClient = useAxios<CourseDetails>();
+
+  React.useEffect(() => {
+    if (!courseId) return;
+
+    courseDetailsClient.sendRequest(getCourseDetails(courseId));
+  }, [courseId]);
+
+  React.useEffect(() => {
+    if (!courseDetailsClient.response) return;
+
+    if (courseDetailsClient.response.status === 200) {
+      setCourse(courseDetailsClient.response.data);
+    }
+  }, [courseDetailsClient.response]);
+
+  const sessionDetailsClient = useAxios<SessionDetails>();
+
+  React.useEffect(() => {
+    if (!sessionId) return;
+
+    sessionDetailsClient.sendRequest(getSessionDetails(sessionId));
+  }, [sessionId]);
+
+  React.useEffect(() => {
+    if (!sessionDetailsClient.response) return;
+
+    if (sessionDetailsClient.response.status === 200) {
+      setSession(sessionDetailsClient.response.data);
+    }
+  }, [sessionDetailsClient.response]);
+
+  const handleSetSessionId = (id: number | null) => {
+    if (id === sessionId) {
       return;
     }
-    setCourse(getCourse(c));
+    setSessionId(id);
     setSession(null);
-    setOpened(true);
+  };
+
+  const handleSetOpenedCourse = (id?: number) => {
+    if (id === courseId) {
+      return;
+    }
+    setCourseId(id ?? null);
+    setSessionId(null);
+    setOpened(id !== undefined);
   };
 
   // Handle closing course detail
@@ -92,11 +125,9 @@ function Courses() {
     history.pushState(
       null,
       '',
-      `/courses/?course=${course?.code ?? ''}&session=${
-        sessionDetail ? getStartTime(sessionDetail) : ''
-      }`,
+      `/courses/?course=${courseId ?? ''}&session=${sessionId ?? ''}`,
     );
-  }, [course, sessionDetail, history]);
+  }, [courseId, sessionId, history]);
 
   const courseList = (
     <Box
@@ -130,10 +161,11 @@ function Courses() {
           }}
         >
           <CourseList
-            courseCode={course?.code}
-            withinOneHourCourse={withinOneHourCourse?.name}
+            selected={course?.id}
+            current={current}
+            withinOneHour={withinOneHour}
             editMode={false}
-            onSelect={(c) => setOpenedCourse(c)}
+            onSelect={(c) => handleSetOpenedCourse(c)}
           />
         </Panel>
       </Box>
@@ -163,11 +195,11 @@ function Courses() {
       <Box flex={7}>
         <CoursePanel
           course={course}
-          withinOneHour={course?.code === withinOneHourCourse?.name}
-          session={sessionDetail}
-          setSession={setSession}
+          withinOneHour={false}
+          session={(sessionId ?? 0) === 0 ? null : session}
+          setSession={handleSetSessionId}
           opened={opened}
-          onClose={() => setOpened(false)}
+          onClose={() => handleSetOpenedCourse()}
         />
       </Box>
     </Box>

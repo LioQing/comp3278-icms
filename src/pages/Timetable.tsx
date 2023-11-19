@@ -8,51 +8,146 @@ import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import Button from '@mui/material/Button';
 import ButtonBase from '@mui/material/ButtonBase';
+import Alert from '@mui/material/Alert';
+import Snackbar from '@mui/material/Snackbar';
 import moment from 'moment';
 import useTheme from '@mui/material/styles/useTheme';
 import { useNavigate } from 'react-router-dom';
 import Panel from '../components/Panel';
-import Session, { getStartTime } from '../models/Session';
+import {
+  Timetable as TimetableSession,
+  getTimetable,
+} from '../models/Timetable';
+import useAxios from '../hooks/useAxios';
+import useLocalStorage from '../hooks/useLocalStorage';
+
+interface SessionProps {
+  session: TimetableSession;
+  handleCourseClick: (session: TimetableSession) => () => void;
+}
+
+function Session({ session, handleCourseClick }: SessionProps) {
+  const theme = useTheme();
+  const [timetableSettings] = useLocalStorage('timetableSettings', {
+    'Show Time': false,
+    'Show Name': false,
+    'Show Classroom': false,
+    'Show Session Type': false,
+  });
+
+  const start = new Date(session.start_time);
+  const end = new Date(session.end_time);
+
+  const startHour = start.getHours();
+  const startMinute = start.getMinutes();
+  const endHour = end.getHours();
+  const endMinute = end.getMinutes();
+  const duration = (endHour - startHour) * 60 + endMinute - startMinute;
+  const offsetY = startHour * 60 + startMinute;
+  const offsetX = start.getDay();
+  const height = (duration / 1440) * 100;
+  const top = (offsetY / 1440) * 100;
+  const left = (offsetX / 7) * 100;
+
+  // Build text
+  let text = `${session.course_code}`;
+  if (timetableSettings['Show Time']) {
+    text += `\n${moment(start).format('HH:mm')} - ${moment(end).format(
+      'HH:mm',
+    )}`;
+  }
+  if (timetableSettings['Show Name']) {
+    text += `\n${session.course_name}`;
+  }
+  if (timetableSettings['Show Classroom']) {
+    text += `\n${session.classroom}`;
+  }
+  if (timetableSettings['Show Session Type']) {
+    text += `\n${session.session_type}`;
+  }
+
+  return (
+    <Paper
+      key={session.session_id}
+      elevation={2}
+      sx={{
+        display: 'flex',
+        flexDirection: 'column',
+        position: 'absolute',
+        top: `${top}%`,
+        left: `${left}%`,
+        height: `${height}%`,
+        width: 'calc(100% / 7)',
+        backgroundColor: `${theme.palette.primary.main}88`,
+        borderRadius: '8px',
+        textAlign: 'center',
+        justifyContent: 'center',
+        overflow: 'hidden',
+        transition: 'all 250ms cubic-bezier(0.4, 0, 0.2, 1)',
+        ':hover': {
+          filter: 'brightness(110%)',
+        },
+      }}
+    >
+      <ButtonBase
+        focusRipple
+        onClick={handleCourseClick(session)}
+        sx={{
+          width: '100%',
+          height: '100%',
+          px: 1,
+          py: 0.2,
+        }}
+      >
+        <Typography
+          variant="caption"
+          lineHeight={1.2}
+          whiteSpace="pre-line"
+          sx={{
+            maxHeight: '100%',
+          }}
+        >
+          {text}
+        </Typography>
+      </ButtonBase>
+    </Paper>
+  );
+}
 
 function Timetable() {
-  const theme = useTheme();
   const navigate = useNavigate();
-  const [sundayDate, setSundayDate] = React.useState(
-    (() => {
-      const d = new Date();
-      d.setDate(d.getDate() - d.getDay());
-      return d;
-    })(),
-  );
+  const [date, setDate] = React.useState(new Date());
+  const [error, setError] = React.useState<string | null>(null);
+  const [errorOpened, setErrorOpened] = React.useState(false);
+  const [sessions, setSessions] = React.useState<TimetableSession[]>([]);
 
-  // TODO: Get student sessions from backend using sundayDate
-  const sessions = React.useMemo<Session[]>(() => {
-    const e = new Date();
-    e.setDate(e.getDate() - e.getDay());
-    if (sundayDate.toDateString() !== e.toDateString()) {
-      return [];
-    }
+  const timetableClient = useAxios<TimetableSession[]>();
 
-    const a = new Date(sundayDate);
-    a.setHours(12, 30);
-    const b = new Date(sundayDate);
-    b.setHours(16, 20);
+  React.useEffect(() => {
+    if (!timetableClient.response) return;
 
-    const c = new Date(sundayDate);
-    c.setDate(c.getDate() + 4);
-    c.setHours(8, 30);
-    const d = new Date(sundayDate);
-    d.setDate(d.getDate() + 4);
-    d.setHours(19, 20);
+    setSessions(timetableClient.response.data);
+  }, [timetableClient.response]);
 
-    return [
-      { start: a, end: b, name: 'COMP3278' },
-      { start: c, end: d, name: '//TODO: Add courses' },
-    ];
-  }, [sundayDate]);
+  React.useEffect(() => {
+    if (!timetableClient.error) return;
 
-  const handleCourseClick = (c: Session) => () => {
-    navigate(`/courses/?course=${c.name}&session=${getStartTime(c)}`);
+    setError(timetableClient.error.message);
+    setErrorOpened(true);
+  }, [timetableClient.error]);
+
+  React.useEffect(() => {
+    timetableClient.sendRequest(
+      getTimetable({
+        date: moment(date).format('YYYY-MM-DD'),
+      }),
+    );
+  }, [date]);
+
+  const handleCourseClick = (session: TimetableSession) => () => {
+    navigate(
+      `/courses/?course=${session.course_id}&session=${session.session_id}`,
+    );
   };
 
   return (
@@ -65,9 +160,9 @@ function Timetable() {
             <Button
               variant="outlined"
               onClick={() => {
-                const d = new Date(sundayDate);
+                const d = new Date(date);
                 d.setDate(d.getDate() - 7);
-                setSundayDate(d);
+                setDate(d);
               }}
             >
               Previous Week
@@ -75,9 +170,9 @@ function Timetable() {
             <Button
               variant="outlined"
               onClick={() => {
-                const d = new Date(sundayDate);
+                const d = new Date(date);
                 d.setDate(d.getDate() + 7);
-                setSundayDate(d);
+                setDate(d);
               }}
             >
               Next Week
@@ -90,8 +185,8 @@ function Timetable() {
           <Box display="flex" flexDirection="row">
             <Box width="4rem" />
             {[...Array(7)].map((_, i) => {
-              const day = new Date(sundayDate);
-              day.setDate(sundayDate.getDate() + i);
+              const day = new Date(date);
+              day.setDate(date.getDate() - date.getDay() + i);
               return (
                 <Box
                   key={moment(day).format('YYYY-MM-DD')}
@@ -140,7 +235,7 @@ function Timetable() {
               </Box>
             </Box>
             <Box
-              height="600px"
+              height="800px"
               flexGrow={1}
               sx={{
                 position: 'relative',
@@ -166,59 +261,26 @@ function Timetable() {
                     />
                   ))}
               </Grid>
-              {sessions.map(({ start, end, name }: Session) => {
-                const startHour = start.getHours();
-                const startMinute = start.getMinutes();
-                const endHour = end.getHours();
-                const endMinute = end.getMinutes();
-                const duration =
-                  (endHour - startHour) * 60 + endMinute - startMinute;
-                const offsetY = startHour * 60 + startMinute;
-                const offsetX = start.getDay();
-                const height = (duration / 1440) * 100;
-                const top = (offsetY / 1440) * 100;
-                const left = (offsetX / 7) * 100;
-                return (
-                  <Paper
-                    key={name}
-                    elevation={2}
-                    sx={{
-                      display: 'flex',
-                      flexDirection: 'column',
-                      position: 'absolute',
-                      top: `${top}%`,
-                      left: `${left}%`,
-                      height: `${height}%`,
-                      width: 'calc(100% / 7)',
-                      backgroundColor: `${theme.palette.primary.main}88`,
-                      borderRadius: '8px',
-                      textAlign: 'center',
-                      justifyContent: 'center',
-                      overflow: 'hidden',
-                      transition: 'all 250ms cubic-bezier(0.4, 0, 0.2, 1)',
-                      ':hover': {
-                        filter: 'brightness(110%)',
-                      },
-                    }}
-                  >
-                    <ButtonBase
-                      focusRipple
-                      onClick={handleCourseClick({ start, end, name })}
-                      sx={{
-                        width: '100%',
-                        height: '100%',
-                        p: 1,
-                      }}
-                    >
-                      {name}
-                    </ButtonBase>
-                  </Paper>
-                );
-              })}
+              {sessions.map((session) => (
+                <Session
+                  key={session.session_id}
+                  session={session}
+                  handleCourseClick={handleCourseClick}
+                />
+              ))}
             </Box>
           </Box>
         </Stack>
       </Panel>
+      <Snackbar
+        open={errorOpened}
+        autoHideDuration={6000}
+        onClose={() => setErrorOpened(false)}
+      >
+        <Alert onClose={() => setErrorOpened(false)} severity="error">
+          {error}
+        </Alert>
+      </Snackbar>
     </Container>
   );
 }

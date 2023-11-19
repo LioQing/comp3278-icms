@@ -14,6 +14,11 @@ import AssignmentIndIcon from '@mui/icons-material/AssignmentInd';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 import Typography from '@mui/material/Typography';
+import moment from 'moment';
+import { useCookies } from 'react-cookie';
+import useAxios from '../hooks/useAxios';
+import { postLogout } from '../models/Logout';
+import { LastLogin, getLastLogin } from '../models/LastLogin';
 
 const pages = [
   {
@@ -62,7 +67,31 @@ function NavBar() {
   const location = useLocation();
   const navigate = useNavigate();
   const theme = useTheme();
+  const [, , removeCookies] = useCookies();
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
+  const [lastLogin, setLastLogin] = React.useState<Date | null>(null);
+
+  const logoutClient = useAxios();
+
+  React.useEffect(() => {
+    if (!logoutClient.response) return;
+    removeCookies('auth-token', { path: '/' });
+    navigate('/');
+  }, [logoutClient]);
+
+  const lastLoginClient = useAxios<LastLogin>();
+
+  React.useEffect(() => {
+    lastLoginClient.sendRequest(getLastLogin());
+  }, []);
+
+  React.useEffect(() => {
+    if (!lastLoginClient.response) return;
+
+    if (lastLoginClient.response.status === 200) {
+      setLastLogin(new Date(lastLoginClient.response.data.last_login));
+    }
+  }, [lastLoginClient.response]);
 
   const handleMenu = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -78,21 +107,21 @@ function NavBar() {
   };
 
   const handleLogout = () => {
-    // TODO: Modify local storage
-    navigate('/login/');
+    logoutClient.sendRequest(postLogout());
   };
 
   return (
     <>
       <ElevationScroll>
         <AppBar
-          position="sticky"
+          position="fixed"
           sx={{
             color: 'primary.main',
+            height: '64px',
           }}
         >
           <Toolbar sx={{ justifyContent: 'space-between' }}>
-            <Box width="100px">
+            <Box width="100px" flexGrow={1}>
               <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
                 ICMS
               </Typography>
@@ -148,7 +177,12 @@ function NavBar() {
               flexDirection="row"
               justifyContent="flex-end"
               alignItems="center"
+              flexGrow={1}
             >
+              <Typography variant="body2">
+                {lastLogin &&
+                  `Last login: ${moment(lastLogin).format('YYYY-MM-DD HH:mm')}`}
+              </Typography>
               <IconButton
                 size="large"
                 aria-label="account of current user"
@@ -182,7 +216,7 @@ function NavBar() {
         <MenuItem onClick={handleSettings}>Settings</MenuItem>
         <MenuItem onClick={handleLogout}>Logout</MenuItem>
       </Menu>
-      <Box height={24} />
+      <Box height={96} />
       <Outlet />
       <Box height={96} />
     </>

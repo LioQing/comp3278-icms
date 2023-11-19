@@ -23,7 +23,8 @@
     "@typescript-eslint/jsx-props-no-spreading": "off",
     "@typescript-eslint/no-array-index-key": "off",
     "@typescript-eslint/lines-between-class-members": "off",
-    "@typescript-eslint/no-nested-ternary": "off"
+    "@typescript-eslint/no-nested-ternary": "off",
+    "@typescript-eslint/no-shadow": "off"
   },
   "include": ["src"]
 }

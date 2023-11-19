@@ -14,6 +14,7 @@ import Account from './pages/Account';
 import { SettingsContext } from './contexts/Settings';
 import FaceLoginSetup from './pages/FaceLoginSetup';
 import useLocalStorage from './hooks/useLocalStorage';
+import Index from './pages/Index';
 
 const lightTheme = createTheme({
   palette: {
@@ -69,6 +70,7 @@ function App() {
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<NavBar />}>
+              <Route index element={<Index />} />
               <Route path="timetable/" element={<Timetable />} />
               <Route path="courses/" element={<Courses />} />
               <Route path="account/" element={<Account />} />
