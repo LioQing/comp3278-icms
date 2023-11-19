@@ -18,12 +18,15 @@ function Index(): JSX.Element | null {
         courseCurrentClient.response.data;
       if (current.length === 0 && withinOneHour.length === 0) {
         navigate('/timetable/');
+      } else if (current.length > 0) {
+        const courseId = current[0].course;
+        const sessionId = current[0].session;
+        navigate(`/courses/?course=${courseId}&session=${sessionId}`);
+      } else {
+        const courseId = withinOneHour[0].course;
+        const sessionId = withinOneHour[0].session;
+        navigate(`/courses/?course=${courseId}&session=${sessionId}`);
       }
-
-      const courseId = current[0].course;
-      const sessionId = current[0].session;
-
-      navigate(`/courses/?course=${courseId}&session=${sessionId}`);
     }
   }, [courseCurrentClient.response]);
 
