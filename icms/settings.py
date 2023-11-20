@@ -157,4 +157,13 @@ SPECTACULAR_SETTINGS = {
     "ENFORCE_NON_BLANK_FIELDS": True,
 }
 
+# Upload
 DATA_UPLOAD_MAX_NUMBER_FIELDS = None
+
+# Email
+EMAIL_BACKEND = django_config.email_backend
+EMAIL_HOST = django_config.email_host
+EMAIL_PORT = django_config.email_port
+EMAIL_USE_SSL = django_config.email_use_ssl
+EMAIL_HOST_USER = django_config.email_host_user
+EMAIL_HOST_PASSWORD = django_config.email_host_password

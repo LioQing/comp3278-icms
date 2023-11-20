@@ -1,10 +1,11 @@
 from typing import Any, Dict
 
 from pydantic import Field
-from pydantic_settings import BaseSettings
+
+from .base_config import BaseConfig
 
 
-class DBConfig(BaseSettings):
+class DBConfig(BaseConfig):
     """Database configuration"""
 
     engine: str = Field("django.db.backends.mysql")

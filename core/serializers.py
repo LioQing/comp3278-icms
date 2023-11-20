@@ -330,3 +330,12 @@ class ApiFaceLoginSerializer(serializers.Serializer):
     )
     image = extra_fields.Base64ImageField(required=True)
     auth_token = serializers.CharField(read_only=True)
+
+
+class ApiMailMaterialSerializer(serializers.Serializer):
+    """Serializer for the ApiMailMaterialView"""
+
+    owner = serializers.ChoiceField(choices=enums.MaterialOwners.choices())
+    owner_id = serializers.IntegerField()
+    material = serializers.ChoiceField(choices=enums.MaterialTypes.choices())
+    material_id = serializers.IntegerField()

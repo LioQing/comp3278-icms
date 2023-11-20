@@ -77,4 +77,9 @@ urlpatterns = [
         views.ApiFaceLoginView.as_view(),
         name="face-login",
     ),
+    path(
+        "mail-material/",
+        views.ApiMailMaterialView.as_view(),
+        name="mail-material",
+    ),
 ]
