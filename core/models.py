@@ -134,7 +134,9 @@ class Course(models.Model):
     name = models.CharField(max_length=255)
     description = models.TextField()
 
-    students = models.ManyToManyField(Student, related_name="courses")
+    students = models.ManyToManyField(
+        Student, related_name="courses", blank=True
+    )
 
     class Meta:
         unique_together = (("code", "year"),)

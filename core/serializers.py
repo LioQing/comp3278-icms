@@ -339,3 +339,21 @@ class ApiMailMaterialSerializer(serializers.Serializer):
     owner_id = serializers.IntegerField()
     material = serializers.ChoiceField(choices=enums.MaterialTypes.choices())
     material_id = serializers.IntegerField()
+
+
+class ApiCourseAvailableSerializer(serializers.ModelSerializer):
+    """Serializer for the ApiCoursesAvailableView"""
+
+    class Meta:
+        model = models.Course
+        fields = ("id", "name", "code", "year")
+
+
+class ApiRegisterSerializer(serializers.ModelSerializer):
+    """Serializer for the ApiRegisterView"""
+
+    auth_token = serializers.CharField(read_only=True)
+
+    class Meta:
+        model = models.Student
+        fields = ("name", "email", "id", "username", "password", "auth_token")

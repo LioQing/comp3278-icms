@@ -19,6 +19,8 @@ class DjangoConfig(BaseConfig):
     email_use_ssl: bool = Field(True)
     email_host_user: str = Field()
     email_host_password: str = Field()
+    email_timeout: int = Field(10)
+    email_retry: int = Field(3)
 
     class Config:
         env_prefix = "DJANGO_"

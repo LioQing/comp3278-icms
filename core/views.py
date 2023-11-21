@@ -14,6 +14,8 @@ from rest_framework import (
 )
 from rest_framework.authtoken.models import Token
 
+from configs import django_config
+
 from . import enums, face_recognition, models, serializers
 
 
@@ -725,7 +727,7 @@ class ApiAccountRecordView(views.APIView):
         user: models.Student = request.user
 
         page = request.query_params.get("page", None)
-        page_size = request.query_params.get("page_size", 20)
+        page_size = request.query_params.get("page_size", "20")
 
         if page is None:
             raise exceptions.ParseError("Missing parameter 'page'")
@@ -738,14 +740,13 @@ class ApiAccountRecordView(views.APIView):
         if page <= 0:
             raise exceptions.ParseError("Invalid page number")
 
-        if page_size is not None:
-            try:
-                page_size = int(page_size)
-            except ValueError:
-                raise exceptions.ParseError("Invalid page size")
+        try:
+            page_size = int(page_size)
+        except ValueError:
+            raise exceptions.ParseError("Invalid page size")
 
-            if page_size <= 0:
-                raise exceptions.ParseError("Invalid page size")
+        if page_size <= 0:
+            raise exceptions.ParseError("Invalid page size")
 
         # Get the records
         records = models.Record.objects.raw(
@@ -1224,7 +1225,14 @@ class ApiMailMaterialView(views.APIView):
                 f" {material_model.description}\nURL: {material_model.url}\n\n"
             )
 
-        email.send()
+        for retry in range(django_config.email_retry):
+            try:
+                email.send()
+            except TimeoutError as e:
+                if retry == django_config.email_retry - 1:
+                    raise e
+            else:
+                break
 
         # Update record
         material_info = f"{material_model.name}"
@@ -1232,8 +1240,9 @@ class ApiMailMaterialView(views.APIView):
             material_info = f"{owner_model.code} {material_info}"
         elif owner == enums.MaterialOwners.SESSION:
             material_info = (
-                f"{owner_model.course.code} {owner_model.type}"
-                f" {owner_model.start_time.strftime('dddd %Y-%m-%d %H:%M')} -"
+                f"{owner_model.course.code}"
+                f" {enums.SessionType[owner_model.type]}"
+                f" {owner_model.start_time.strftime('%A %Y-%m-%d %H:%M')} -"
                 f" {owner_model.end_time.strftime('%H:%M')} {material_info}"
             )
 
@@ -1254,3 +1263,198 @@ class ApiMailMaterialView(views.APIView):
             )
 
         return response.Response({})
+
+
+@extend_schema_view(
+    get=extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name="page",
+                type=int,
+                required=True,
+            ),
+            OpenApiParameter(
+                name="page_size",
+                type=int,
+            ),
+            OpenApiParameter(
+                name="query",
+                type=str,
+            ),
+        ]
+    )
+)
+class ApiCourseAvailableView(views.APIView):
+    """View for getting the available courses"""
+
+    serializer_class = serializers.ApiCourseAvailableSerializer
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request: request.Request):
+        """Return a response containing all the available courses"""
+        page = request.query_params.get("page", None)
+        page_size = request.query_params.get("page_size", "10")
+        query = request.query_params.get("query", "")
+
+        if page is None:
+            raise exceptions.ParseError("Missing parameter 'page'")
+
+        try:
+            page = int(page)
+        except ValueError:
+            raise exceptions.ParseError("Invalid page number")
+
+        if page <= 0:
+            raise exceptions.ParseError("Invalid page number")
+
+        try:
+            page_size = int(page_size)
+        except ValueError:
+            raise exceptions.ParseError("Invalid page size")
+
+        if page_size <= 0:
+            raise exceptions.ParseError("Invalid page size")
+
+        query_int = -1
+        try:
+            query_int = int(query)
+        except ValueError:
+            pass
+
+        # Get the courses
+        courses = models.Course.objects.raw(
+            """
+            SELECT
+                core_course.id,
+                core_course.code,
+                core_course.name
+            FROM
+                core_course
+            WHERE
+                core_course.code LIKE %s
+                OR core_course.name LIKE %s
+                OR core_course.year = %s
+            ORDER BY
+                core_course.code
+            LIMIT %s
+            OFFSET %s
+            """,
+            [
+                f"%{query}%",
+                f"%{query}%",
+                query_int,
+                page_size,
+                (page - 1) * page_size,
+            ],
+        )
+
+        # Serialize the courses
+        serializer = self.serializer_class(courses, many=True)
+
+        return response.Response(serializer.data)
+
+
+class ApiRegisterView(views.APIView):
+    """View for registering"""
+
+    serializer_class = serializers.ApiRegisterSerializer
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request: request.Request):
+        """Register"""
+        serializer = self.serializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        name: str = serializer.validated_data["name"]
+        id: str = serializer.validated_data["id"]
+        username: str = serializer.validated_data["username"]
+        password: str = serializer.validated_data["password"]
+        email: str = serializer.validated_data["email"]
+
+        # Check if the id exists
+        users = models.Student.objects.raw(
+            """
+            SELECT * FROM core_student WHERE id = %s
+            """,
+            [id],
+        )
+
+        if len(users) != 0:
+            raise exceptions.ValidationError({"id": ["ID already exists."]})
+
+        # Check if the username exists
+        users = models.Student.objects.raw(
+            """
+            SELECT * FROM core_student WHERE username = %s
+            """,
+            [username],
+        )
+
+        if len(users) != 0:
+            raise exceptions.ValidationError(
+                {"username": ["Username already exists."]}
+            )
+
+        # Check if the email exists
+        users = models.Student.objects.raw(
+            """
+            SELECT * FROM core_student WHERE email = %s
+            """,
+            [email],
+        )
+
+        if len(users) != 0:
+            raise exceptions.ValidationError(
+                {"email": ["Email already exists."]}
+            )
+
+        # Validate password
+        try:
+            validate_password(password)
+        except Exception as e:
+            raise exceptions.ValidationError({"password": e.messages})
+
+        # Create user
+        user = models.Student.objects.create(
+            name=name,
+            id=id,
+            username=username,
+            email=email,
+        )
+
+        user.set_password(password)
+        user.save()
+
+        with connection.cursor() as cursor:
+            # Student last login
+            cursor.execute(
+                """
+                UPDATE core_student
+                SET last_login = %s
+                WHERE id = %s
+                """,
+                [timezone.now(), user.id],
+            )
+
+            # Records
+            cursor.execute(
+                """
+                INSERT INTO core_record (time, student_id, message)
+                VALUES (%s, %s, 'Register account')
+                """,
+                [timezone.now(), user.id],
+            )
+
+            # Records
+            cursor.execute(
+                """
+                INSERT INTO core_record (time, student_id, message)
+                VALUES (%s, %s, 'Log in')
+                """,
+                [timezone.now(), user.id],
+            )
+
+        # Get the token
+        token = Token.objects.get_or_create(user=user)[0]
+
+        return response.Response({"auth_token": token.key})

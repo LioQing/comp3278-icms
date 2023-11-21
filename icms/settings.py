@@ -167,3 +167,4 @@ EMAIL_PORT = django_config.email_port
 EMAIL_USE_SSL = django_config.email_use_ssl
 EMAIL_HOST_USER = django_config.email_host_user
 EMAIL_HOST_PASSWORD = django_config.email_host_password
+EMAIL_TIMEOUT = django_config.email_timeout

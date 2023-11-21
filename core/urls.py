@@ -82,4 +82,14 @@ urlpatterns = [
         views.ApiMailMaterialView.as_view(),
         name="mail-material",
     ),
+    path(
+        "course/available/",
+        views.ApiCourseAvailableView.as_view(),
+        name="course-available",
+    ),
+    path(
+        "register/",
+        views.ApiRegisterView.as_view(),
+        name="register",
+    ),
 ]
