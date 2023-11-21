@@ -8,17 +8,58 @@ import Avatar from '@mui/material/Avatar';
 import Typography from '@mui/material/Typography';
 import TextField from '@mui/material/TextField';
 import Button from '@mui/material/Button';
+import { useCookies } from 'react-cookie';
 import { useNavigate } from 'react-router-dom';
 import Panel from '../components/Panel';
+import useAxios from '../hooks/useAxios';
+import { Register as RegisterResponse, postRegister } from '../models/Register';
 
 interface RegisterFormProps {
   handleBack: () => void;
-  handleSubmit: () => void;
+  handleSubmit: (event: React.FormEvent<HTMLFormElement>) => void;
+  errors: { [key: string]: string | null };
 }
 
-function RegisterForm({ handleBack, handleSubmit }: RegisterFormProps) {
+function RegisterForm({ handleBack, handleSubmit, errors }: RegisterFormProps) {
+  console.log(errors);
   return (
     <Box component="form" onSubmit={handleSubmit} width="100%">
+      <TextField
+        margin="normal"
+        required
+        fullWidth
+        id="name"
+        label="Name"
+        name="name"
+        autoComplete="name"
+        autoFocus
+        error={!!errors.name}
+        helperText={errors.name}
+      />
+      <TextField
+        margin="normal"
+        required
+        fullWidth
+        id="email"
+        label="Email"
+        name="email"
+        autoComplete="email"
+        autoFocus
+        error={!!errors.email}
+        helperText={errors.email}
+      />
+      <TextField
+        margin="normal"
+        required
+        fullWidth
+        id="id"
+        label="UID"
+        name="id"
+        autoComplete="new-password"
+        autoFocus
+        error={!!errors.id}
+        helperText={errors.id}
+      />
       <TextField
         margin="normal"
         required
@@ -28,6 +69,8 @@ function RegisterForm({ handleBack, handleSubmit }: RegisterFormProps) {
         name="username"
         autoComplete="new-password"
         autoFocus
+        error={!!errors.username}
+        helperText={errors.username}
       />
       <TextField
         margin="normal"
@@ -38,16 +81,22 @@ function RegisterForm({ handleBack, handleSubmit }: RegisterFormProps) {
         type="password"
         id="password"
         autoComplete="new-password"
+        autoFocus
+        error={!!errors.password}
+        helperText={errors.password}
       />
       <TextField
         margin="normal"
         required
         fullWidth
-        name="confirm password"
+        name="confirm_password"
         label="Confirm Password"
         type="password"
         id="confirm-password"
         autoComplete="new-password"
+        autoFocus
+        error={!!errors.confirm_password}
+        helperText={errors.confirm_password}
       />
       <Box
         display="flex"
@@ -96,10 +145,20 @@ function AskForFace({ handleNo, handleYes }: AskForFaceProps) {
 
 function Register() {
   const navigate = useNavigate();
+  const [, setCookies] = useCookies();
+  const registerClient = useAxios<RegisterResponse>();
 
   // 0 - user info, 1 - ask for face
   const [registerStage, setRegisterStage] = React.useState(0);
   const [title, setTitle] = React.useState('Register');
+  const [errors, setErrors] = React.useState<{ [key: string]: string | null }>({
+    name: null,
+    email: null,
+    id: null,
+    username: null,
+    password: null,
+    confirm_password: null,
+  });
 
   const handleSecondaryButton = React.useCallback(() => {
     if (registerStage === 0) {
@@ -111,18 +170,89 @@ function Register() {
     }
   }, [navigate, registerStage]);
 
-  const handlePrimaryButton = React.useCallback(() => {
-    console.log('Register');
+  const handlePrimaryButton = React.useCallback(
+    (event?: React.FormEvent<HTMLFormElement>) => {
+      if (registerStage === 0 && event) {
+        event.preventDefault();
+        const data = new FormData(event.currentTarget);
 
-    if (registerStage === 0) {
+        // validate
+        if (data.get('password') !== data.get('confirm_password')) {
+          setErrors({
+            name: null,
+            email: null,
+            id: null,
+            username: null,
+            password: 'Passwords do not match',
+            confirm_password: 'Passwords do not match',
+          });
+          return;
+        }
+
+        setErrors({
+          name: null,
+          email: null,
+          id: null,
+          username: null,
+          password: null,
+          confirm_password: null,
+        });
+        registerClient.sendRequest(
+          postRegister({
+            name: data.get('name') as string,
+            email: data.get('email') as string,
+            id: data.get('id') as string,
+            username: data.get('username') as string,
+            password: data.get('password') as string,
+          }),
+        );
+      } else if (registerStage === 1) {
+        navigate('/face-setup/?redirect=/');
+      } else {
+        console.error('Invalid register stage');
+      }
+    },
+    [registerStage],
+  );
+
+  React.useEffect(() => {
+    if (!registerClient.response) return;
+
+    if (registerClient.response.status === 200) {
+      setCookies('auth-token', registerClient.response.data.auth_token, {
+        path: '/',
+      });
       setRegisterStage(1);
-      setTitle('Successfully Registered!');
-    } else if (registerStage === 1) {
-      navigate('/face-setup/?redirect=/timetable/');
-    } else {
-      console.error('Invalid register stage');
+      setTitle('Register Successful');
     }
-  }, [registerStage]);
+  }, [registerClient.response]);
+
+  React.useEffect(() => {
+    if (!registerClient.error) return;
+
+    const data = registerClient.error.response?.data as any;
+    if (data) {
+      setErrors({
+        name: data.name ? data.name[0] : null,
+        email: data.email ? data.email[0] : null,
+        id: data.id ? data.id[0] : null,
+        username: data.username ? data.username[0] : null,
+        password: data.password ? data.password[0] : null,
+        confirm_password: data.confirm_password
+          ? data.confirm_password[0]
+          : null,
+      });
+    } else {
+      setErrors({
+        name: null,
+        email: null,
+        id: null,
+        username: null,
+        password: null,
+        confirm_password: registerClient.error.message,
+      });
+    }
+  }, [registerClient.error]);
 
   return (
     <Container>
@@ -134,6 +264,7 @@ function Register() {
         alignItems="center"
         minHeight="100vh"
         paddingY={2}
+        my={2}
       >
         <Box maxWidth={600} flexBasis="100%">
           <Panel>
@@ -154,6 +285,7 @@ function Register() {
                 <RegisterForm
                   handleBack={handleSecondaryButton}
                   handleSubmit={handlePrimaryButton}
+                  errors={errors}
                 />
               ) : (
                 <AskForFace

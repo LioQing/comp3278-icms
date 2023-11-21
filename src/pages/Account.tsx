@@ -53,18 +53,19 @@ function Account() {
   const accountRecordClient = useAxios<AccountRecord[]>();
   const nextAccountRecordClient = useAxios<AccountRecord[]>();
   const disableFaceClient = useAxios();
+  const pageSize = 20;
 
   const fetchRecords = () => {
     accountRecordClient.sendRequest(
       getAccountRecord({
         page,
-        page_size: 10,
+        page_size: pageSize,
       }),
     );
     nextAccountRecordClient.sendRequest(
       getAccountRecord({
         page: page + 1,
-        page_size: 10,
+        page_size: pageSize,
       }),
     );
   };

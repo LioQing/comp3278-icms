@@ -354,16 +354,12 @@ function Login() {
                   justifyContent="space-between"
                   sx={{ mt: 3, mb: 2 }}
                 >
-                  {loginStage > 0 ? (
-                    <Button
-                      variant="outlined"
-                      onClick={loginStage === 0 ? handleRegister : handleBack}
-                    >
-                      {loginStage === 0 ? 'Register' : 'Back'}
-                    </Button>
-                  ) : (
-                    <Box />
-                  )}
+                  <Button
+                    variant="outlined"
+                    onClick={loginStage === 0 ? handleRegister : handleBack}
+                  >
+                    {loginStage === 0 ? 'Register' : 'Back'}
+                  </Button>
                   <Button type="submit" variant="contained">
                     {loginStage === 0
                       ? 'Next'

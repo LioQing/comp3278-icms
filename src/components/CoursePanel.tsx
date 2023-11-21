@@ -10,9 +10,12 @@ import Select, { SelectChangeEvent } from '@mui/material/Select';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Collapse from '@mui/material/Collapse';
+import LinearProgress from '@mui/material/LinearProgress';
+import Alert from '@mui/material/Alert';
 import moment from 'moment';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import LinkIcon from '@mui/icons-material/Link';
+import EmailIcon from '@mui/icons-material/Email';
 import Panel from './Panel';
 import CourseBadge from './CourseBadge';
 import {
@@ -22,15 +25,60 @@ import {
 } from '../models/CourseDetails';
 import { toSessionValue } from '../models/SessionType';
 import { SessionDetails } from '../models/SessionDetails';
+import { postMailMaterial } from '../models/MailMaterial';
+import useAxios from '../hooks/useAxios';
 
 const transition = 'all 250ms cubic-bezier(0.4, 0, 0.2, 1)';
 
 interface MaterialProps {
+  owner: 'course' | 'session';
+  ownerId: number | null;
   type: 'file' | 'hyperlink';
   material: CourseDetailsHyperlink | CourseDetailsFile;
 }
 
-function Material({ type, material }: MaterialProps) {
+function Material({ owner, ownerId, type, material }: MaterialProps) {
+  const mailMaterialClient = useAxios();
+  const [mailSuccess, setMailSuccess] = React.useState<string | null>(null);
+  const [mailError, setMailError] = React.useState<string | null>(null);
+  const [mailCompleted, setMailCompleted] = React.useState<
+    'success' | 'error' | null
+  >(null);
+
+  const mailMaterial = () => {
+    if (ownerId === null) return;
+    setMailCompleted(null);
+    mailMaterialClient.sendRequest(
+      postMailMaterial({
+        owner: owner.toUpperCase(),
+        owner_id: ownerId,
+        material: type.toUpperCase(),
+        material_id: material.id,
+      }),
+    );
+  };
+
+  React.useEffect(() => {
+    if (!mailMaterialClient.response) return;
+
+    if (mailMaterialClient.response.status === 200) {
+      setMailSuccess('Material sent successfully!');
+      setMailCompleted('success');
+    }
+  }, [mailMaterialClient.response]);
+
+  React.useEffect(() => {
+    if (!mailMaterialClient.error) return;
+
+    const data = mailMaterialClient.error.response?.data as any | undefined;
+    if (data?.detail) {
+      setMailError(data.detail);
+    } else {
+      setMailError(mailMaterialClient.error.message);
+    }
+    setMailCompleted('error');
+  }, [mailMaterialClient.error]);
+
   return (
     <Panel title={material.name}>
       <Typography variant="caption">
@@ -64,7 +112,7 @@ function Material({ type, material }: MaterialProps) {
             return (
               <Button
                 fullWidth
-                variant="outlined"
+                variant="contained"
                 onClick={download}
                 startIcon={<FileDownloadIcon />}
                 sx={{ my: 1 }}
@@ -83,7 +131,7 @@ function Material({ type, material }: MaterialProps) {
                 href={m.url}
                 target="_blank"
                 rel="noreferrer"
-                variant="outlined"
+                variant="contained"
                 startIcon={<LinkIcon />}
                 sx={{ my: 1 }}
               >
@@ -91,6 +139,27 @@ function Material({ type, material }: MaterialProps) {
               </Button>
             );
           })()}
+      <Button
+        fullWidth
+        variant="outlined"
+        onClick={mailMaterial}
+        startIcon={<EmailIcon />}
+        sx={{ my: 1 }}
+      >
+        <Typography sx={{ textTransform: 'none' }}>Mail This to Me</Typography>
+      </Button>
+      <Collapse in={!!mailCompleted}>
+        <Alert
+          onClose={() => setMailCompleted(null)}
+          severity={mailCompleted ?? undefined}
+          sx={{ width: '100%', mt: 2 }}
+        >
+          {mailSuccess || mailError || 'Unknown error.'}
+        </Alert>
+      </Collapse>
+      {mailMaterialClient.loading && (
+        <LinearProgress sx={{ my: 2, width: '100%' }} />
+      )}
     </Panel>
   );
 }
@@ -189,7 +258,13 @@ function CoursePanel({
           <Typography variant="body1">{course?.description}</Typography>
           <Box display="flex" flexDirection="column" gap={2} my={2}>
             {materials.map((m) => (
-              <Material key={m.id} type={m.type} material={m} />
+              <Material
+                key={m.id}
+                owner="course"
+                ownerId={course?.id ?? null}
+                type={m.type}
+                material={m}
+              />
             ))}
           </Box>
         </Collapse>
@@ -232,7 +307,13 @@ function CoursePanel({
             </Typography>
             <Box display="flex" flexDirection="column" gap={2} sx={{ my: 2 }}>
               {sessionMaterials.map((m) => (
-                <Material key={m.id} type={m.type} material={m} />
+                <Material
+                  key={m.id}
+                  owner="session"
+                  ownerId={session?.id ?? null}
+                  type={m.type}
+                  material={m}
+                />
               ))}
             </Box>
           </Box>

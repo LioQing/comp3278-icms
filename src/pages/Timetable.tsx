@@ -6,7 +6,11 @@ import Box from '@mui/material/Box';
 import Paper from '@mui/material/Paper';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
-import Button from '@mui/material/Button';
+import Slider from '@mui/material/Slider';
+import IconButton from '@mui/material/IconButton';
+import Tooltip from '@mui/material/Tooltip';
+import NavigateBeforeIcon from '@mui/icons-material/NavigateBefore';
+import NavigateNextIcon from '@mui/icons-material/NavigateNext';
 import ButtonBase from '@mui/material/ButtonBase';
 import Alert from '@mui/material/Alert';
 import Snackbar from '@mui/material/Snackbar';
@@ -120,6 +124,7 @@ function Timetable() {
   const [error, setError] = React.useState<string | null>(null);
   const [errorOpened, setErrorOpened] = React.useState(false);
   const [sessions, setSessions] = React.useState<TimetableSession[]>([]);
+  const [range, setRange] = useLocalStorage('timetableRange', [16, 40]);
 
   const timetableClient = useAxios<TimetableSession[]>();
 
@@ -156,28 +161,45 @@ function Timetable() {
       <Panel
         title="Timetable"
         trailing={
-          <Stack direction="row" spacing={2}>
-            <Button
-              variant="outlined"
-              onClick={() => {
-                const d = new Date(date);
-                d.setDate(d.getDate() - 7);
-                setDate(d);
-              }}
-            >
-              Previous Week
-            </Button>
-            <Button
-              variant="outlined"
-              onClick={() => {
-                const d = new Date(date);
-                d.setDate(d.getDate() + 7);
-                setDate(d);
-              }}
-            >
-              Next Week
-            </Button>
-          </Stack>
+          <Box display="flex" flexDirection="row" gap={2} alignItems="center">
+            <Typography variant="subtitle2">Range</Typography>
+            <Slider
+              max={48}
+              min={0}
+              size="medium"
+              value={range}
+              onChange={(e, v) => setRange(v as number[])}
+              sx={{ width: '200px' }}
+              valueLabelDisplay="auto"
+              valueLabelFormat={(v) =>
+                `${Math.floor(v / 2)}:${((v % 2) * 30)
+                  .toString()
+                  .padStart(2, '0')}`
+              }
+            />
+            <Tooltip title="Previous Week" placement="top">
+              <IconButton
+                onClick={() => {
+                  const d = new Date(date);
+                  d.setDate(d.getDate() - 7);
+                  setDate(d);
+                }}
+              >
+                <NavigateBeforeIcon />
+              </IconButton>
+            </Tooltip>
+            <Tooltip title="Next week" placement="top">
+              <IconButton
+                onClick={() => {
+                  const d = new Date(date);
+                  d.setDate(d.getDate() + 7);
+                  setDate(d);
+                }}
+              >
+                <NavigateNextIcon />
+              </IconButton>
+            </Tooltip>
+          </Box>
         }
         sx={{ width: '100%' }}
       >
@@ -205,69 +227,75 @@ function Timetable() {
               );
             })}
           </Box>
-          <Box display="flex" flexDirection="row">
-            <Box position="relative" width="4rem">
-              <Box
-                display="flex"
-                position="absolute"
-                flexDirection="column"
-                justifyContent="space-between"
-                top="-0.5rem"
-                right={8}
-                height="calc(100% + 1rem)"
-                width="100%"
-                textAlign="right"
-              >
-                {[...Array(6)]
-                  .map((_, i) =>
-                    new Date(0, 0, 0, i * 4).toLocaleTimeString('en-GB', {
-                      hour: 'numeric',
-                      minute: 'numeric',
-                      hour12: false,
-                    }),
-                  )
-                  .map((time) => (
-                    <Typography key={time} variant="body2">
-                      {time}
-                    </Typography>
-                  ))}
-                <Typography variant="body2">24:00</Typography>
-              </Box>
-            </Box>
+          <Box
+            height={`calc(800px * ${range[1] - range[0]} / 48 + 1rem)`}
+            overflow="hidden"
+          >
             <Box
-              height="800px"
-              flexGrow={1}
-              sx={{
-                position: 'relative',
-                overflow: 'hidden',
-                borderRadius: '8px',
-                border: '1px solid',
-                borderColor: 'divider',
-              }}
+              display="flex"
+              flexDirection="row"
+              mt={`calc(-800px * ${range[0]} / 48)`}
             >
-              <Grid container height="100%" width="100%">
-                {[...Array(7 * 24)]
-                  .map((_, i) => i)
-                  .map((i) => (
-                    <Grid
-                      key={i}
-                      item
-                      minWidth="calc(100% / 7)"
-                      sx={{
-                        borderLeft: i % 7 === 0 ? 'none' : '1px solid',
-                        borderTop: i < 7 ? 'none' : '1px solid',
-                        borderColor: 'divider',
-                      }}
-                    />
-                  ))}
-              </Grid>
-              {sessions.map((session) => (
-                <Session
-                  key={session.session_id}
-                  session={session}
-                  handleCourseClick={handleCourseClick}
-                />
-              ))}
+              <Box position="relative" width="4rem" mr={1}>
+                <Box
+                  display="flex"
+                  flexDirection="column"
+                  justifyContent="space-between"
+                  height="calc(100% + 1rem)"
+                  width="100%"
+                  textAlign="right"
+                >
+                  {[...Array(6)]
+                    .map((_, i) =>
+                      new Date(0, 0, 0, i * 4).toLocaleTimeString('en-GB', {
+                        hour: 'numeric',
+                        minute: 'numeric',
+                        hour12: false,
+                      }),
+                    )
+                    .map((time) => (
+                      <Typography key={time} variant="body2">
+                        {time}
+                      </Typography>
+                    ))}
+                  <Typography variant="body2">24:00</Typography>
+                </Box>
+              </Box>
+              <Box
+                height="800px"
+                flexGrow={1}
+                sx={{
+                  position: 'relative',
+                  overflow: 'hidden',
+                  borderRadius: '8px',
+                  border: '1px solid',
+                  borderColor: 'divider',
+                }}
+              >
+                <Grid container height="100%" width="100%">
+                  {[...Array(7 * 24)]
+                    .map((_, i) => i)
+                    .map((i) => (
+                      <Grid
+                        key={i}
+                        item
+                        minWidth="calc(100% / 7)"
+                        sx={{
+                          borderLeft: i % 7 === 0 ? 'none' : '1px solid',
+                          borderTop: i < 7 ? 'none' : '1px solid',
+                          borderColor: 'divider',
+                        }}
+                      />
+                    ))}
+                </Grid>
+                {sessions.map((session) => (
+                  <Session
+                    key={session.session_id}
+                    session={session}
+                    handleCourseClick={handleCourseClick}
+                  />
+                ))}
+              </Box>
             </Box>
           </Box>
         </Stack>
