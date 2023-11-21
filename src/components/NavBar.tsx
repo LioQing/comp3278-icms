@@ -19,6 +19,7 @@ import { useCookies } from 'react-cookie';
 import useAxios from '../hooks/useAxios';
 import { postLogout } from '../models/Logout';
 import { LastLogin, getLastLogin } from '../models/LastLogin';
+import { ReactComponent as Logo } from '../logo.svg';
 
 const pages = [
   {
@@ -121,7 +122,16 @@ function NavBar() {
           }}
         >
           <Toolbar sx={{ justifyContent: 'space-between' }}>
-            <Box width="100px" flexGrow={1}>
+            <Box
+              width="100px"
+              flexGrow={1}
+              display="flex"
+              flexDirection="row"
+              gap={1}
+            >
+              <Box height="2rem" width="2rem">
+                <Logo height="100%" />
+              </Box>
               <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
                 ICMS
               </Typography>
