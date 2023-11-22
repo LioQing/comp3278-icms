@@ -192,6 +192,7 @@ cython_debug/
 
 # Media
 media/
+core/face_recognition/train.yml
 
 # ------------ IDE ------------ #
 
