@@ -192,7 +192,7 @@ function Courses() {
     >
       <Box flex={0} />
       <Box flex={3} />
-      <Box flex={7}>
+      <Box flex={7} minWidth={0}>
         <CoursePanel
           course={course}
           withinOneHour={false}

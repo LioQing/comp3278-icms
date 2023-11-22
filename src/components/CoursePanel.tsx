@@ -133,9 +133,20 @@ function Material({ owner, ownerId, type, material }: MaterialProps) {
                 rel="noreferrer"
                 variant="contained"
                 startIcon={<LinkIcon />}
-                sx={{ my: 1 }}
+                sx={{
+                  display: 'inline-block',
+                  my: 1,
+                  whiteSpace: 'normal',
+                  wordWrap: 'break-word',
+                }}
               >
-                <Typography sx={{ textTransform: 'none' }}>{m.url}</Typography>
+                <Typography
+                  sx={{
+                    textTransform: 'none',
+                  }}
+                >
+                  {m.url}
+                </Typography>
               </Button>
             );
           })()}
