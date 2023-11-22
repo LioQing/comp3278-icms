@@ -49,29 +49,31 @@ flowchart TD
     landing([User landing]) --> loggedIn{Logged in?}
 
     loggedIn -- Yes --> home([Home page])
-    loggedIn -- No --> loginOrRegister{Login or register?}
+    loggedIn -- No --> loginPage[/Login Page/]
+    loginPage --> loginOrRegister{Login or register?}
 
-    loginOrRegister -- Login --> hasUser{Has user?}
-    loginOrRegister -- Register --> register[/Register/]
+    loginOrRegister -- Login --> inputUsername[/Login Username/]
+    loginOrRegister -- Register --> register[/Register Page/]
     
     database[(Database)]
     setupFace -.- database
     register -.- database
     database -.- login
+    database -.- loginFace
     inputUsername -.- database
 
-    hasUser -- No --> inputUsername[/Input username/]
-    inputUsername --> login
-    hasUser -- Yes --> login[/Login with face or password/]
+    inputUsername --> pof{Password or Face?}
+    pof -- Password --> login[/Login Password/]
+    pof -- Face --> loginFace[/Login Face/]
 
     register --> setupFaceQ{Setup face?}
-    setupFaceQ -- Yes --> setupFace[/Setup face/]
+    setupFaceQ -- Yes --> setupFace[/Face Setup Page/]
     setupFaceQ -- No --> home
     setupFace --> home
 
     cookie[(Cookie)] -.- loggedIn
-    cookie -.- hasUser
 
+    loginFace --> home
     login --> home
 ```
 
@@ -79,36 +81,22 @@ flowchart TD
 
 ```mermaid
 flowchart TD
-    navbar([Navigation bar]) --> home[Home page]
-    navbar --> add[Add course]
+    navbar([Navigation bar]) --> timetable[Timtable page]
+
+    timetable --> classes
+    navbar --> classes[Courses page]
     navbar --> account[Account page]
     navbar --> lastLogin[Display last login]
     navbar --> actions[User actions]
 
-    home --> classWithinOneHour{Has class within 1 hour?}
-    classWithinOneHour -- Yes --> displayCourse[Display course info]
-    classWithinOneHour -- No --> displayTimetable[Display class timetable]
-
-    displayCourse --> link[/Link redirect or send email/]
-
-    displayTimetable --> info[/Check course detail/]
-    info --> link
-
-    add --> inputCourse[/Input course info/]
-
-    account --> latestBehavior[Display latest behavior]
-    account --> change[/Change username, password, or face/]
-
     database[(Database)]
-    database -.- displayCourse
-    database -.- info
-    database -.- link
-    displayTimetable -.- database
-    classWithinOneHour -.- database
-    inputCourse -.- database
-    latestBehavior -.- database
+    timetable -.- database
+    classes -.- database
+    session -.- database
+    account -.- database
     lastLogin -.- database
-    change -.- database
+
+    classes --> session[Sessions]
     
     logout -.- cookie[(Cookie)]
 
