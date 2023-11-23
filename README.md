@@ -20,6 +20,8 @@ For the demo to work, you need to import the database and the media files.
 
 - The database data file with an existing account (username: timmy, password: icms20231123) is `icms_data.sql`.
 
+  - It has face data for the account but it is not trained, so it will not work. You have to setup face again (You can setup face for another account and all the account's face data will be trained).
+
 - The media files are in `media.zip`.
 
 Unzip the media files to the `media` directory in the `backend` root directory.
