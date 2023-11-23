@@ -1,12 +1,14 @@
 import CloseIcon from '@mui/icons-material/Close';
 import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
+import TextField from '@mui/material/TextField';
 import React from 'react';
 import { useTheme } from '@mui/material/styles';
 import Box from '@mui/material/Box';
 import InfiniteScroll from 'react-infinite-scroll-component';
 import ButtonBase from '@mui/material/ButtonBase';
 import Checkbox from '@mui/material/Checkbox';
+import SearchIcon from '@mui/icons-material/Search';
 import { CourseList as Course } from '../models/CourseList';
 import Panel from './Panel';
 import useAxios from '../hooks/useAxios';
@@ -29,6 +31,7 @@ function AddCourse({ courses, setCourses, opened, onClose }: AddCourseProps) {
   const [nextAvailables, setNextAvailables] = React.useState<CourseAvailable[]>(
     [],
   );
+  const [query, setQuery] = React.useState<string>('');
   const pageSize = 10;
 
   const courseAvailableClient = useAxios<CourseAvailable[]>();
@@ -44,18 +47,12 @@ function AddCourse({ courses, setCourses, opened, onClose }: AddCourseProps) {
   }, [courseEnrollClient.response]);
 
   const fetchCourses = () => {
-    courseAvailableClient.sendRequest(
-      getCourseAvailable({
-        page,
-        page_size: pageSize,
-        query: '',
-      }),
-    );
+    setAvailables([...availables, ...nextAvailables]);
     nextCourseAvailableClient.sendRequest(
       getCourseAvailable({
         page: page + 1,
         page_size: pageSize,
-        query: '',
+        query,
       }),
     );
   };
@@ -71,10 +68,6 @@ function AddCourse({ courses, setCourses, opened, onClose }: AddCourseProps) {
       }),
     );
   };
-
-  React.useEffect(() => {
-    fetchCourses();
-  }, []);
 
   React.useEffect(() => {
     if (!courseAvailableClient.response) return;
@@ -97,6 +90,43 @@ function AddCourse({ courses, setCourses, opened, onClose }: AddCourseProps) {
     fetchCourses();
   };
 
+  React.useEffect(() => {
+    courseAvailableClient.sendRequest(
+      getCourseAvailable({
+        page,
+        page_size: pageSize,
+        query,
+      }),
+    );
+    nextCourseAvailableClient.sendRequest(
+      getCourseAvailable({
+        page: page + 1,
+        page_size: pageSize,
+        query,
+      }),
+    );
+    setPage(page + 1);
+  }, []);
+
+  const handleSearch = () => {
+    setAvailables([]);
+    courseAvailableClient.sendRequest(
+      getCourseAvailable({
+        page: 1,
+        page_size: pageSize,
+        query,
+      }),
+    );
+    nextCourseAvailableClient.sendRequest(
+      getCourseAvailable({
+        page: 2,
+        page_size: pageSize,
+        query,
+      }),
+    );
+    setPage(2);
+  };
+
   return (
     <Panel
       title="Enroll Course"
@@ -110,6 +140,21 @@ function AddCourse({ courses, setCourses, opened, onClose }: AddCourseProps) {
         transition,
       }}
     >
+      <TextField
+        value={query}
+        onChange={(e) => {
+          setQuery(e.target.value);
+        }}
+        sx={{ width: '100%', mb: 2 }}
+        InputProps={{
+          endAdornment: (
+            <IconButton onClick={handleSearch}>
+              <SearchIcon />
+            </IconButton>
+          ),
+        }}
+        placeholder='Search course by name, code, or year. Example: "Algoritma"'
+      />
       <Box
         height={500}
         border="1px solid"

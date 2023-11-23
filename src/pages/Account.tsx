@@ -56,6 +56,17 @@ function Account() {
   const pageSize = 20;
 
   const fetchRecords = () => {
+    setRecords([...records, ...nextRecords]);
+    nextAccountRecordClient.sendRequest(
+      getAccountRecord({
+        page: page + 1,
+        page_size: pageSize,
+      }),
+    );
+  };
+
+  React.useEffect(() => {
+    accountClient.sendRequest(getAccount());
     accountRecordClient.sendRequest(
       getAccountRecord({
         page,
@@ -68,11 +79,7 @@ function Account() {
         page_size: pageSize,
       }),
     );
-  };
-
-  React.useEffect(() => {
-    accountClient.sendRequest(getAccount());
-    fetchRecords();
+    setPage(page + 1);
   }, []);
 
   React.useEffect(() => {
