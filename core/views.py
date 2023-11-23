@@ -1357,7 +1357,6 @@ class ApiCourseAvailableView(views.APIView):
         )
 
         # Serialize the courses
-        print([courses.code for courses in courses])
         serializer = self.serializer_class(courses, many=True)
 
         return response.Response(serializer.data)
@@ -1687,7 +1686,6 @@ class ApiChatbotView(views.APIView):
                 data_str += f"{key}: {data}\n\n"
 
         # Generate ressponse
-        print(timezone.now())
         api_response = openai.ChatCompletion.create(
             deployment_id=openai_config.deployment,
             model=openai_config.model,
