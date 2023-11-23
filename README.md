@@ -2,6 +2,87 @@
 
 This repository contains the source code for the project.
 
+## Quick Start
+
+The project requires Python (developed and tested in 3.11) and Node.js (developed and tested in 18.17.1)
+
+The required files may all be downloaded from the release page on GitHub.
+
+After downloading the files, extract the files to a directory.
+
+### MySQL
+
+SQL queries are located in the Python source code, inside `core/views.py` instead of a separate file.
+
+For the demo to work, you need to import the database and the media files.
+
+- The database table file is `icms_tables.sql`.
+
+- The database data file without any account is `icms_data_empty.sql`.
+
+- The database data file with an existing account (username: timmy, password: icms20231123) is `icms_data.sql`.
+
+- The media files are in `media.zip`.
+
+Unzip the media files to the `media` directory in the `backend` root directory.
+
+Then open a terminal and run the following commands.
+
+```bash
+# Open MySQL
+mysql -u root -p
+
+# Create a database
+CREATE DATABASE icms;
+
+# Import the database table
+source icms_tables.sql;
+
+# Import the database data
+source icms_data.sql;
+# or
+source icms_data_empty.sql;
+```
+
+### Backend
+
+You need to assign the correct value for the `.env` file in the `backend` directory.
+
+Then open a terminal in the directory and run the following commands.
+
+```bash
+# Go into the backend directory
+cd backend
+
+# Install the required Python packages
+pip install -r requirements.txt
+
+# Run the backend
+python manage.py makemigrations
+python manage.py migrate
+python manage.py runserver
+```
+
+### Frontend
+
+You need to assign the correct value for the `.env` file in the `frontend` directory.
+
+Then open another terminal in the directory and run the following commands.
+
+```bash
+# Go into the frontend directory
+cd frontend
+
+# Install the required Node.js packages
+npm install
+
+# Run the frontend
+npm start
+```
+
+Then open a browser and go to [http://localhost:3000](http://localhost:3000) to see the frontend.
+
+
 ## Getting Started
 
 There are two parts to this project: the frontend and the backend.
@@ -81,22 +162,25 @@ flowchart TD
 
 ```mermaid
 flowchart TD
-    navbar([Navigation bar]) --> timetable[Timtable page]
+    database[(Database)]
+    timetable -.- database
+    classes -.- database
+    session -.- database
+    enroll -.- database
+    chatbot -.- database
+    account -.- database
+    lastLogin -.- database
 
-    timetable --> classes
+    navbar([Navigation bar]) --> timetable[Timtable page]
     navbar --> classes[Courses page]
     navbar --> account[Account page]
     navbar --> lastLogin[Display last login]
     navbar --> actions[User actions]
 
-    database[(Database)]
-    timetable -.- database
-    classes -.- database
-    session -.- database
-    account -.- database
-    lastLogin -.- database
-
+    timetable --> classes
     classes --> session[Sessions]
+    classes --> enroll[Enroll]
+    classes --> chatbot[Chatbot]
     
     logout -.- cookie[(Cookie)]
 
