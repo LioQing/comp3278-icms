@@ -24,7 +24,16 @@ For the demo to work, you need to import the database and the media files.
 
 - The media files are in `media.zip`.
 
-Unzip the media files to the `media` directory in the `backend` root directory.
+Unzip the media files to the `media` directory in the `backend` root directory, so it looks like this.
+
+```
+comp3278-icms-main
+├─ backend/
+│  └─ media/
+│     ├─ content of media.zip
+│     └─ ...
+└─ ...
+```
 
 Then open a terminal and run the following commands.
 
