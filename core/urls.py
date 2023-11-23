@@ -97,4 +97,9 @@ urlpatterns = [
         views.ApiRegisterView.as_view(),
         name="register",
     ),
+    path(
+        "chatbot/",
+        views.ApiChatbotView.as_view(),
+        name="chatbot",
+    ),
 ]

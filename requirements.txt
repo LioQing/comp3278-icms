@@ -21,6 +21,7 @@ mccabe==0.6.1
 mysqlclient==2.2.0
 nodeenv==1.8.0
 numpy==1.26.2
+openai==0.28.0
 opencv-contrib-python==4.8.1.78
 opencv-python==4.8.1.78
 Pillow==10.1.0

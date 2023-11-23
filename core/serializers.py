@@ -368,3 +368,10 @@ class ApiRegisterSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.Student
         fields = ("name", "email", "id", "username", "password", "auth_token")
+
+
+class ApiChatbotSerializer(serializers.Serializer):
+    """Serializer for the ApiChatbotView"""
+
+    user_message = serializers.CharField(max_length=2000, required=True)
+    bot_message = serializers.CharField(read_only=True)

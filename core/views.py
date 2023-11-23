@@ -1,6 +1,8 @@
 import datetime
-from typing import List
+import json
+from typing import Any, Dict, List
 
+import openai
 from django.apps import apps
 from django.contrib.auth.password_validation import validate_password
 from django.core.mail import EmailMultiAlternatives
@@ -15,9 +17,14 @@ from rest_framework import (
 )
 from rest_framework.authtoken.models import Token
 
-from configs import django_config
+from configs import django_config, openai_config
 
 from . import enums, face_recognition, models, serializers
+
+openai.api_key = openai_config.key
+openai.api_base = openai_config.url
+openai.api_type = openai_config.api_type
+openai.api_version = openai_config.version
 
 
 class ModelsStudentViewset(viewsets.ModelViewSet):
@@ -1350,6 +1357,7 @@ class ApiCourseAvailableView(views.APIView):
         )
 
         # Serialize the courses
+        print([courses.code for courses in courses])
         serializer = self.serializer_class(courses, many=True)
 
         return response.Response(serializer.data)
@@ -1579,3 +1587,300 @@ class ApiRegisterView(views.APIView):
         token = Token.objects.get_or_create(user=user)[0]
 
         return response.Response({"auth_token": token.key})
+
+
+class ApiChatbotView(views.APIView):
+    """View for chatbot"""
+
+    serializer_class = serializers.ApiChatbotSerializer
+    permission_classes = [permissions.AllowAny]
+
+    FUNCTION_DESCRIPTIONS: Dict[str, str] = {
+        "course_info": "course information that the user is enrolled in",
+        "session_times": "course sessions' time that the user is enrolled in",
+        "student_info": (
+            "user and account information, `id` is the univeristy ID (UID)"
+        ),
+        "available_courses": "the courses that the user can enroll in",
+        "student_records": "the student activity records on the system",
+    }
+
+    def post(self, request: request.Request):
+        """Chatbot"""
+        serializer = self.serializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        user_message: str = serializer.validated_data["user_message"]
+
+        # Get the response
+        items = self.FUNCTION_DESCRIPTIONS.items()
+        api_response = openai.ChatCompletion.create(
+            deployment_id=openai_config.deployment,
+            model=openai_config.model,
+            functions=[
+                {
+                    "name": "get_data",
+                    "description": (
+                        "Select the required data to reply to the user, each"
+                        " parameter indicates a category of data to be"
+                        " retrieved, multiple parameters can be selected at"
+                        " the same time, and the data is returned in the form"
+                        " of a list."
+                    ),
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            name: {
+                                "description": description,
+                                "type": "boolean",
+                            }
+                            for name, description in items
+                        },
+                        "required": list(self.FUNCTION_DESCRIPTIONS.keys()),
+                    },
+                }
+            ],
+            function_call={"name": "get_data"},
+            messages=[
+                {
+                    "role": "system",
+                    "content": (
+                        "You are a professional data analyst, you need to help"
+                        " a student to find the information he needs given his"
+                        " question. Please choose the relevant data by calling"
+                        " the function 'get_data'."
+                    ),
+                },
+                {
+                    "role": "user",
+                    "content": user_message,
+                },
+            ],
+        )
+
+        # Get the data
+        functions = {
+            "course_info": self.get_course_info,
+            "session_times": self.get_session_times,
+            "student_info": self.get_student_info,
+            "available_courses": self.get_available_courses,
+            "student_records": self.get_student_records,
+        }
+
+        from . import openai_models
+
+        chatcmpl = openai_models.Chatcmpl(**api_response)
+
+        choice = chatcmpl.choices[0]
+        message = choice.message
+        function_call = message.function_call
+
+        data_str = ""
+        arguments: Dict[str, Any] = json.loads(function_call.arguments)
+        for key, value in arguments.items():
+            if value:
+                data = {
+                    "description": self.FUNCTION_DESCRIPTIONS[key],
+                    "data": functions[key](user=request.user),
+                }
+
+                data_str += f"{key}: {data}\n\n"
+
+        # Generate ressponse
+        print(timezone.now())
+        api_response = openai.ChatCompletion.create(
+            deployment_id=openai_config.deployment,
+            model=openai_config.model,
+            messages=[
+                {
+                    "role": "system",
+                    "content": (
+                        "You are an assistant to reply to the student's"
+                        f" question. The time now is {timezone.now()}. You"
+                        " must reply with reference to the given data: \n\n"
+                        f" {data_str}"
+                    ),
+                },
+                {
+                    "role": "user",
+                    "content": user_message,
+                },
+            ],
+        )
+
+        api_response = openai_models.Chatcmpl(**api_response)
+        api_response = api_response.choices[0].message.content
+
+        return response.Response(
+            {"user_message": user_message, "bot_message": api_response}
+        )
+
+    @staticmethod
+    def get_course_info(user: models.Student) -> List[Dict[str, str]]:
+        """Get course info a list of dict"""
+        query_set = models.Course.objects.raw(
+            """
+            SELECT
+                core_course.id,
+                core_course.code,
+                core_course.name,
+                core_course.year,
+                core_course.description
+            FROM
+                core_course
+            WHERE
+                core_course.id IN (
+                    SELECT core_course_students.course_id
+                    FROM core_course_students
+                    WHERE core_course_students.student_id = %s
+                )
+            """,
+            [
+                user.id,
+            ],
+        )
+
+        return [
+            {
+                "id": course.id,
+                "code": course.code,
+                "name": course.name,
+                "year": course.year,
+                "description": course.description,
+            }
+            for course in query_set
+        ]
+
+    @staticmethod
+    def get_session_times(user: models.Student) -> List[Dict[str, str]]:
+        """Get course sessions start a nd end time, course name, code, year"""
+        queryset = models.Session.objects.raw(
+            """
+            SELECT
+                core_session.id AS id,
+                core_session.start_time AS start_time,
+                core_session.end_time AS end_time,
+                core_course.name AS name,
+                core_course.code AS code,
+                core_course.year AS year
+            FROM
+                core_session
+            JOIN
+                core_course ON core_session.course_id = core_course.id
+            WHERE
+                core_course.id IN (
+                    SELECT core_course_students.course_id
+                    FROM core_course_students
+                    WHERE core_course_students.student_id = %s
+                )
+            """,
+            [
+                user.id,
+            ],
+        )
+
+        return [
+            {
+                "id": session.id,
+                "start_time": session.start_time,
+                "end_time": session.end_time,
+                "name": session.name,
+                "code": session.code,
+                "year": session.year,
+            }
+            for session in queryset
+        ]
+
+    @staticmethod
+    def get_student_info(user: models.Student) -> List[Dict[str, str]]:
+        """Get student info"""
+        queryset = models.Student.objects.raw(
+            """
+            SELECT
+                core_student.name,
+                core_student.id,
+                core_student.username,
+                core_student.email
+            FROM
+                core_student
+            WHERE
+                core_student.id = %s
+            """,
+            [
+                user.id,
+            ],
+        )
+
+        return [
+            {
+                "name": student.name,
+                "id": student.id,
+                "username": student.username,
+                "email": student.email,
+            }
+            for student in queryset
+        ]
+
+    @staticmethod
+    def get_available_courses(user: models.Student) -> List[Dict[str, str]]:
+        """Get available courses code, name, and year"""
+        queryset = models.Course.objects.raw(
+            """
+            SELECT
+                core_course.id,
+                core_course.code,
+                core_course.name,
+                core_course.year
+            FROM
+                core_course
+            WHERE
+                core_course.id NOT IN (
+                    SELECT core_course_students.course_id
+                    FROM core_course_students
+                    WHERE core_course_students.student_id = %s
+                )
+            """,
+            [
+                user.id,
+            ],
+        )
+
+        return [
+            {
+                "id": course.id,
+                "code": course.code,
+                "name": course.name,
+                "year": course.year,
+            }
+            for course in queryset
+        ]
+
+    @staticmethod
+    def get_student_records(user: models.Student) -> List[Dict[str, str]]:
+        """Get student activity records"""
+        queryset = models.Record.objects.raw(
+            """
+            SELECT
+                core_record.id,
+                core_record.time,
+                core_record.message
+            FROM
+                core_record
+            WHERE
+                core_record.student_id = %s
+            ORDER BY
+                core_record.time DESC
+            """,
+            [
+                user.id,
+            ],
+        )
+
+        return [
+            {
+                "id": record.id,
+                "time": record.time,
+                "message": record.message,
+            }
+            for record in queryset
+        ]
