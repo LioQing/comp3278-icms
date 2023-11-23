@@ -18,8 +18,6 @@ For the demo to work, you need to import the database and the media files.
 
 - The database table file is `icms_tables.sql`.
 
-- The database data file without any account is `icms_data_empty.sql`.
-
 - The database data file with an existing account (username: timmy, password: icms20231123) is `icms_data.sql`.
 
 - The media files are in `media.zip`.
