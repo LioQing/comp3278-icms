@@ -1600,7 +1600,10 @@ class ApiChatbotView(views.APIView):
         "student_info": (
             "user and account information, `id` is the univeristy ID (UID)"
         ),
-        "available_courses": "the courses that the user can enroll in",
+        "available_courses": (
+            "the courses that the user can enroll in and may be interested in"
+            " to learn about"
+        ),
         "student_records": "the student activity records on the system",
     }
 
@@ -1831,16 +1834,7 @@ class ApiChatbotView(views.APIView):
                 core_course.year
             FROM
                 core_course
-            WHERE
-                core_course.id NOT IN (
-                    SELECT core_course_students.course_id
-                    FROM core_course_students
-                    WHERE core_course_students.student_id = %s
-                )
             """,
-            [
-                user.id,
-            ],
         )
 
         return [
