@@ -20,8 +20,8 @@ function Chatbot({ opened, onClose }: ChatbotProps) {
   const theme = useTheme();
   const [input, setInput] = React.useState<string>('');
   const [conversation, setConversation] = React.useState<
-    [string, string | null][]
-  >([]);
+    [string | null, string | null][]
+  >([[null, 'Hello! How can I help you?']]);
 
   const chatbotClient = useAxios<ChatbotApi>();
 
@@ -95,24 +95,26 @@ function Chatbot({ opened, onClose }: ChatbotProps) {
               gap={1}
               alignItems={userMessage === '' ? 'flex-start' : 'flex-end'}
             >
-              <Box
-                width="100%"
-                display="flex"
-                flexDirection="row"
-                justifyContent="flex-end"
-              >
-                <Panel
-                  sx={{
-                    maxWidth: '90%',
-                    p: 1,
-                    pt: 1,
-                    bgcolor: theme.palette.primary.light,
-                    color: theme.palette.primary.contrastText,
-                  }}
+              {userMessage && (
+                <Box
+                  width="100%"
+                  display="flex"
+                  flexDirection="row"
+                  justifyContent="flex-end"
                 >
-                  {userMessage}
-                </Panel>
-              </Box>
+                  <Panel
+                    sx={{
+                      maxWidth: '90%',
+                      p: 1,
+                      pt: 1,
+                      bgcolor: theme.palette.primary.light,
+                      color: theme.palette.primary.contrastText,
+                    }}
+                  >
+                    {userMessage}
+                  </Panel>
+                </Box>
+              )}
               {botMessage && (
                 <Box
                   width="100%"
@@ -149,7 +151,7 @@ function Chatbot({ opened, onClose }: ChatbotProps) {
               </IconButton>
             ),
           }}
-          placeholder='Search course by name, code, or year. Example: "Algoritma"'
+          placeholder='Ask about your courses. Example: "What are my enrolled courses?"'
         />
       </Box>
     </Panel>

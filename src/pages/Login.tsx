@@ -35,6 +35,7 @@ function Login() {
   const [usernameError, setUsernameError] = React.useState<string | null>(null);
   const [passwordError, setPasswordError] = React.useState<string | null>(null);
   const [webcamError, setWebcamError] = React.useState<string | null>(null);
+  const [username, setUsername] = React.useState<string | null>(null);
   const webcamRef = React.useRef<Webcam>(null);
 
   // 0 - username, 1 - password, 2 - face
@@ -140,15 +141,7 @@ function Login() {
 
       if (!faceLoginClient.request?.data?.username) {
         setWebcamError('An error occurred');
-        return;
       }
-
-      faceLoginClient.sendRequest(
-        postFaceLogin({
-          username: faceLoginClient.request?.data?.username,
-          image: imageSrc,
-        }),
-      );
     } else {
       const data: any = faceLoginClient.error.response?.data;
       if (data.detail) {
@@ -158,6 +151,33 @@ function Login() {
       }
     }
   }, [faceLoginClient.error]);
+
+  const [timer, setTimer] = React.useState<NodeJS.Timeout | null>(null);
+
+  React.useEffect(() => {
+    if (loginStage !== 2) return;
+
+    setTimer(
+      setInterval(() => {
+        const imageSrc = webcamRef.current?.getScreenshot();
+        if (!imageSrc || !username || faceLoginClient.loading) return;
+
+        faceLoginClient.sendRequest(
+          postFaceLogin({
+            username,
+            image: imageSrc,
+          }),
+        );
+      }, 200),
+    );
+  }, [loginStage]);
+
+  // Disable timer if not stage 2
+  React.useEffect(() => {
+    if (loginStage === 2) return;
+
+    if (timer) clearInterval(timer);
+  }, [loginStage]);
 
   const handleUserMedia = () => setLoading(false);
 
@@ -214,15 +234,8 @@ function Login() {
       );
     } else if (loginStage === 2) {
       event.currentTarget.username.disabled = true;
-      const imageSrc = webcamRef.current?.getScreenshot();
-      if (!imageSrc) return;
-
-      faceLoginClient.sendRequest(
-        postFaceLogin({
-          username: data.get('username') as string,
-          image: imageSrc,
-        }),
-      );
+      setUsername(data.get('username') as string);
+      setLoginStage(1);
     } else {
       console.error('Invalid login stage');
     }
