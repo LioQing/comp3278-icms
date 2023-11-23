@@ -88,6 +88,11 @@ urlpatterns = [
         name="course-available",
     ),
     path(
+        "course/enroll/",
+        views.ApiCourseEnrollView.as_view(),
+        name="course-enroll",
+    ),
+    path(
         "register/",
         views.ApiRegisterView.as_view(),
         name="register",

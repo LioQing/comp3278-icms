@@ -1,4 +1,5 @@
 import datetime
+from typing import List
 
 from django.apps import apps
 from django.contrib.auth.password_validation import validate_password
@@ -1352,6 +1353,126 @@ class ApiCourseAvailableView(views.APIView):
         serializer = self.serializer_class(courses, many=True)
 
         return response.Response(serializer.data)
+
+
+class ApiCourseEnrollView(views.APIView):
+    """View for enrolling courses"""
+
+    serializer_class = serializers.ApiCourseEnrollSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request: request.Request):
+        """Enroll courses"""
+        user: models.Student = request.user
+
+        serializer = self.serializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        ids: List[int] = serializer.validated_data["ids"]
+
+        # Check if the courses exist
+        courses = []
+        if len(ids) > 0:
+            courses_query: RawQuerySet[
+                models.Course
+            ] = models.Course.objects.raw(
+                """
+                SELECT
+                    *
+                FROM
+                    core_course
+                WHERE
+                    core_course.id IN %s
+                """,
+                [
+                    ids,
+                ],
+            )
+            courses = list(courses_query)
+
+        courses_ids = set([c.id for c in courses])
+
+        non_exist_ids = set(ids) - courses_ids
+
+        if len(non_exist_ids) != 0:
+            raise exceptions.NotFound(
+                f"Course(s) {non_exist_ids} does not exist"
+            )
+
+        # Get current enrollments
+        current_courses: RawQuerySet[
+            models.Course
+        ] = models.Course.objects.raw(
+            """
+            SELECT
+                core_course.id,
+                core_course.code,
+                core_course.name
+            FROM
+                core_course
+            JOIN
+                core_course_students
+                ON core_course.id = core_course_students.course_id
+            WHERE
+                core_course_students.student_id = %s
+            """,
+            [
+                user.id,
+            ],
+        )
+
+        current_course_ids = set([c.id for c in current_courses])
+
+        added_courses = [
+            str(c.code) for c in courses if c.id not in current_course_ids
+        ]
+
+        removed_courses = [
+            str(c.code) for c in current_courses if c.id not in courses_ids
+        ]
+
+        with connection.cursor() as cursor:
+            # Remove current enrollments
+            cursor.execute(
+                """
+                DELETE FROM core_course_students
+                WHERE student_id = %s
+                """,
+                [user.id],
+            )
+
+            # Enroll courses
+            for course in courses:
+                cursor.execute(
+                    """
+                    INSERT INTO core_course_students (course_id, student_id)
+                    VALUES (%s, %s)
+                    """,
+                    [course.id, user.id],
+                )
+
+            # Update record
+            message = "Enroll courses: "
+            if len(added_courses) != 0:
+                message += f"Added {', '.join(added_courses)}"
+            if len(removed_courses) != 0:
+                message += f"Removed {', '.join(removed_courses)}"
+
+            cursor.execute(
+                """
+                INSERT INTO core_record (time, student_id, message)
+                VALUES (%s, %s, %s)
+                """,
+                [timezone.now(), user.id, message],
+            )
+
+        return response.Response(
+            data={
+                "courses": serializers.ApiCourseListSerializer(
+                    courses, many=True
+                ).data
+            }
+        )
 
 
 class ApiRegisterView(views.APIView):

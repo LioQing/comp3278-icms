@@ -349,6 +349,17 @@ class ApiCourseAvailableSerializer(serializers.ModelSerializer):
         fields = ("id", "name", "code", "year")
 
 
+class ApiCourseEnrollSerializer(serializers.Serializer):
+    """Serializer for the ApiCourseEnrollView"""
+
+    ids = serializers.ListField(
+        child=serializers.IntegerField(), required=True
+    )
+    courses = serializers.ListField(
+        child=ApiCourseListSerializer(), read_only=True
+    )
+
+
 class ApiRegisterSerializer(serializers.ModelSerializer):
     """Serializer for the ApiRegisterView"""
 
