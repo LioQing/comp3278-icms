@@ -13,20 +13,26 @@ import {
   CourseCurrentInfo,
   getCourseCurrent,
 } from '../models/CourseCurrent';
+import { CourseList as Course, getCourseList } from '../models/CourseList';
 import { CourseDetails, getCourseDetails } from '../models/CourseDetails';
 import { SessionDetails, getSessionDetails } from '../models/SessionDetails';
+import AddCourse from '../components/AddCourse';
 
 const transition = 'all 250ms cubic-bezier(0.4, 0, 0.2, 1)';
 
 function Courses() {
   const history = React.useMemo(() => window.history, []);
   const query = useQuery();
-  const [courseId, setCourseId] = React.useState<number | null>(() => {
+  const [courseId, setCourseId] = React.useState<number | 'add' | null>(() => {
     const id = query.get('course');
     if (id === null) return null;
     return parseInt(id, 10);
   });
-  const [course, setCourse] = React.useState<CourseDetails | null>(null);
+  const [course, setCourse] = React.useState<CourseDetails | 'add' | null>(
+    null,
+  );
+  const [courses, setCourses] = React.useState<Course[]>([]);
+  const [coursesError, setCoursesError] = React.useState<string | null>(null);
   const [current, setCurrent] = React.useState<CourseCurrentInfo[]>([]);
   const [withinOneHour, setWithinOneHour] = React.useState<CourseCurrentInfo[]>(
     [],
@@ -41,6 +47,31 @@ function Courses() {
   const prevCourse = usePrevious(course);
   const openedCourseRef = React.useRef<HTMLDivElement>(null);
   const courseListRef = React.useRef<HTMLDivElement>(null);
+
+  const courseListClient = useAxios<Course[]>();
+
+  React.useEffect(() => {
+    courseListClient.sendRequest(getCourseList());
+  }, []);
+
+  React.useEffect(() => {
+    if (!courseListClient.response) return;
+
+    if (courseListClient.response.status === 200) {
+      setCourses(courseListClient.response.data);
+    }
+  }, [courseListClient.response]);
+
+  React.useEffect(() => {
+    if (!courseListClient.error) return;
+
+    const data: any = courseListClient.error.response?.data;
+    if (data.detail) {
+      setCoursesError(data.detail);
+    } else {
+      setCoursesError(courseListClient.error.message);
+    }
+  }, [courseListClient.error]);
 
   const courseCurrentClient = useAxios<CourseCurrent>();
 
@@ -60,7 +91,7 @@ function Courses() {
   const courseDetailsClient = useAxios<CourseDetails>();
 
   React.useEffect(() => {
-    if (!courseId) return;
+    if (!courseId || courseId === 'add') return;
 
     courseDetailsClient.sendRequest(getCourseDetails(courseId));
   }, [courseId]);
@@ -97,11 +128,19 @@ function Courses() {
     setSession(null);
   };
 
-  const handleSetOpenedCourse = (id?: number) => {
+  const handleSetOpenedCourse = (id?: number | 'add') => {
+    if (id === 'add') {
+      setCourse('add');
+      setCourseId('add');
+      setSessionId(null);
+      setOpened(true);
+    }
+
     if (id === courseId) {
       return;
     }
-    setCourseId(id ?? null);
+
+    setCourseId((id as number | undefined) ?? null);
     setSessionId(null);
     setOpened(id !== undefined);
   };
@@ -118,7 +157,7 @@ function Courses() {
 
   // Handle url for state changes
   React.useEffect(() => {
-    if (prevCourse === undefined) {
+    if (prevCourse === undefined || courseId === 'add') {
       return;
     }
 
@@ -159,13 +198,16 @@ function Courses() {
             transition,
             pointerEvents: 'auto',
           }}
+          titleSx={{ ml: 1 }}
         >
           <CourseList
-            selected={course?.id}
+            selected={course !== null && course !== 'add' ? course.id : null}
             current={current}
             withinOneHour={withinOneHour}
             editMode={false}
             onSelect={(c) => handleSetOpenedCourse(c)}
+            error={coursesError}
+            courses={courses}
           />
         </Panel>
       </Box>
@@ -193,14 +235,24 @@ function Courses() {
       <Box flex={0} />
       <Box flex={3} />
       <Box flex={7} minWidth={0}>
-        <CoursePanel
-          course={course}
-          withinOneHour={false}
-          session={(sessionId ?? 0) === 0 ? null : session}
-          setSession={handleSetSessionId}
-          opened={opened}
-          onClose={() => handleSetOpenedCourse()}
-        />
+        {(course === 'add' || course === null) && (
+          <AddCourse
+            courses={courses}
+            setCourses={setCourses}
+            opened={opened}
+            onClose={() => handleSetOpenedCourse()}
+          />
+        )}
+        {(course !== 'add' || course === null) && (
+          <CoursePanel
+            course={course}
+            withinOneHour={false}
+            session={(sessionId ?? 0) === 0 ? null : session}
+            setSession={handleSetSessionId}
+            opened={opened}
+            onClose={() => handleSetOpenedCourse()}
+          />
+        )}
       </Box>
     </Box>
   );

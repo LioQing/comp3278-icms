@@ -393,7 +393,7 @@ function Account() {
                   .map((log, i) => ({ log, i }))
                   .map(({ log, i }) => (
                     <Box
-                      key={i}
+                      key={log.id}
                       width="100%"
                       display="flex"
                       flexDirection="row"

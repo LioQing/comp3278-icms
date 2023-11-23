@@ -270,7 +270,7 @@ function CoursePanel({
           <Box display="flex" flexDirection="column" gap={2} my={2}>
             {materials.map((m) => (
               <Material
-                key={m.id}
+                key={`${m.type}${m.id}`}
                 owner="course"
                 ownerId={course?.id ?? null}
                 type={m.type}
@@ -319,7 +319,7 @@ function CoursePanel({
             <Box display="flex" flexDirection="column" gap={2} sx={{ my: 2 }}>
               {sessionMaterials.map((m) => (
                 <Material
-                  key={m.id}
+                  key={`${m.type}${m.id}`}
                   owner="session"
                   ownerId={session?.id ?? null}
                   type={m.type}
