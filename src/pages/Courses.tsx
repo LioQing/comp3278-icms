@@ -251,25 +251,40 @@ function Courses() {
       <Box flex={3} />
       <Box flex={7} minWidth={0}>
         {(course === 'add' || course === null) && (
-          <AddCourse
-            courses={courses}
-            setCourses={setCourses}
-            opened={opened}
-            onClose={() => handleSetOpenedCourse()}
-          />
+          <Box
+            height={course === null ? '0px' : undefined}
+            overflow={course === null ? 'hidden' : undefined}
+          >
+            <AddCourse
+              courses={courses}
+              setCourses={setCourses}
+              opened={opened}
+              onClose={() => handleSetOpenedCourse()}
+            />
+          </Box>
         )}
         {(course === 'chat' || course === null) && (
-          <Chatbot opened={opened} onClose={() => handleSetOpenedCourse()} />
+          <Box
+            height={course === null ? '0px' : undefined}
+            overflow={course === null ? 'hidden' : undefined}
+          >
+            <Chatbot opened={opened} onClose={() => handleSetOpenedCourse()} />
+          </Box>
         )}
         {((course !== 'add' && course !== 'chat') || course === null) && (
-          <CoursePanel
-            course={course}
-            withinOneHour={false}
-            session={(sessionId ?? 0) === 0 ? null : session}
-            setSession={handleSetSessionId}
-            opened={opened}
-            onClose={() => handleSetOpenedCourse()}
-          />
+          <Box
+            height={course === null ? '0px' : undefined}
+            overflow={course === null ? 'hidden' : undefined}
+          >
+            <CoursePanel
+              course={course}
+              withinOneHour={false}
+              session={(sessionId ?? 0) === 0 ? null : session}
+              setSession={handleSetSessionId}
+              opened={opened}
+              onClose={() => handleSetOpenedCourse()}
+            />
+          </Box>
         )}
       </Box>
     </Box>

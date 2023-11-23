@@ -22,6 +22,7 @@ function Chatbot({ opened, onClose }: ChatbotProps) {
   const [conversation, setConversation] = React.useState<
     [string | null, string | null][]
   >([[null, 'Hello! How can I help you?']]);
+  const conversationBottomRef = React.useRef<HTMLDivElement>(null);
 
   const chatbotClient = useAxios<ChatbotApi>();
 
@@ -63,98 +64,111 @@ function Chatbot({ opened, onClose }: ChatbotProps) {
     }
   };
 
+  React.useEffect(() => {
+    if (!opened) return;
+    conversationBottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [conversation]);
+
   return (
-    <Panel
-      title="Chatbot"
-      trailing={
-        <IconButton onClick={onClose}>
-          <CloseIcon />
-        </IconButton>
-      }
-      sx={{
-        height: '500px',
-        opacity: opened ? 1 : 0,
-        transition,
-      }}
-    >
-      <Box display="flex" flexDirection="column" gap={2} height="100%">
-        <Box
-          display="flex"
-          flexDirection="column"
-          gap={1}
-          flexGrow={1}
-          overflow="auto"
-          p={2}
-        >
-          {conversation.map(([userMessage, botMessage], index) => (
-            <Box
-              // eslint-disable-next-line react/no-array-index-key
-              key={index.toString()}
-              display="flex"
-              flexDirection="column"
-              gap={1}
-              alignItems={userMessage === '' ? 'flex-start' : 'flex-end'}
-            >
-              {userMessage && (
-                <Box
-                  width="100%"
-                  display="flex"
-                  flexDirection="row"
-                  justifyContent="flex-end"
-                >
-                  <Panel
-                    sx={{
-                      maxWidth: '90%',
-                      p: 1,
-                      pt: 1,
-                      bgcolor: theme.palette.primary.light,
-                      color: theme.palette.primary.contrastText,
-                    }}
+    <>
+      <Panel
+        title="Chatbot"
+        trailing={
+          <IconButton onClick={onClose}>
+            <CloseIcon />
+          </IconButton>
+        }
+        sx={{
+          height: 'calc(100vh - 96px - 96px)',
+          opacity: opened ? 1 : 0,
+          transition,
+        }}
+      >
+        <Box display="flex" flexDirection="column" gap={2} height="100%">
+          <Box
+            display="flex"
+            flexDirection="column"
+            gap={1}
+            flexGrow={1}
+            overflow="auto"
+            p={2}
+          >
+            {conversation.map(([userMessage, botMessage], index) => (
+              <Box
+                // eslint-disable-next-line react/no-array-index-key
+                key={index.toString()}
+                display="flex"
+                flexDirection="column"
+                gap={1}
+                alignItems={userMessage === '' ? 'flex-start' : 'flex-end'}
+              >
+                {userMessage && (
+                  <Box
+                    width="100%"
+                    display="flex"
+                    flexDirection="row"
+                    justifyContent="flex-end"
                   >
-                    {userMessage}
-                  </Panel>
-                </Box>
-              )}
-              {botMessage && (
-                <Box
-                  width="100%"
-                  display="flex"
-                  flexDirection="row"
-                  justifyContent="flex-start"
-                >
-                  <Panel
-                    sx={{
-                      maxWidth: '90%',
-                      p: 1,
-                      pt: 1,
-                    }}
+                    <Panel
+                      sx={{
+                        maxWidth: '90%',
+                        p: 1,
+                        pt: 1,
+                        bgcolor: theme.palette.primary.light,
+                        color: theme.palette.primary.contrastText,
+                      }}
+                    >
+                      {userMessage}
+                    </Panel>
+                  </Box>
+                )}
+                {botMessage && (
+                  <Box
+                    width="100%"
+                    display="flex"
+                    flexDirection="row"
+                    justifyContent="flex-start"
                   >
-                    {botMessage}
-                  </Panel>
-                </Box>
-              )}
-            </Box>
-          ))}
+                    <Panel
+                      sx={{
+                        maxWidth: '90%',
+                        p: 1,
+                        pt: 1,
+                        whiteSpace: 'pre-wrap',
+                      }}
+                    >
+                      {botMessage}
+                    </Panel>
+                  </Box>
+                )}
+              </Box>
+            ))}
+            <Box position="relative" top="100%" ref={conversationBottomRef} />
+          </Box>
+          <TextField
+            value={input}
+            onChange={(e) => {
+              setInput(e.target.value);
+            }}
+            sx={{ width: '100%', mb: 4 }}
+            onKeyDown={keyPress}
+            disabled={chatbotClient.loading}
+            InputProps={{
+              endAdornment: (
+                <IconButton
+                  onClick={handleSend}
+                  disabled={chatbotClient.loading}
+                >
+                  <SendIcon />
+                </IconButton>
+              ),
+            }}
+            placeholder='Ask about your courses. Example: "What are my enrolled courses?"'
+          />
         </Box>
-        <TextField
-          value={input}
-          onChange={(e) => {
-            setInput(e.target.value);
-          }}
-          sx={{ width: '100%', mb: 4 }}
-          onKeyDown={keyPress}
-          disabled={chatbotClient.loading}
-          InputProps={{
-            endAdornment: (
-              <IconButton onClick={handleSend} disabled={chatbotClient.loading}>
-                <SendIcon />
-              </IconButton>
-            ),
-          }}
-          placeholder='Ask about your courses. Example: "What are my enrolled courses?"'
-        />
-      </Box>
-    </Panel>
+      </Panel>
+      <Box height={96} />
+    </>
   );
 }
 
