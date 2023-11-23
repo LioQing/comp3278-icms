@@ -7,6 +7,7 @@ import Divider from '@mui/material/Divider';
 import DeleteIcon from '@mui/icons-material/Delete';
 import ListItem from '@mui/material/ListItem';
 import Typography from '@mui/material/Typography';
+import ChatIcon from '@mui/icons-material/Chat';
 import AddIcon from '@mui/icons-material/Add';
 import Button from '@mui/material/Button';
 import CourseBadge from './CourseBadge';
@@ -18,7 +19,7 @@ export interface CourseListProps {
   current: CourseCurrentInfo[];
   withinOneHour: CourseCurrentInfo[];
   editMode: boolean;
-  onSelect?: (id: number | 'add') => void;
+  onSelect?: (id: number | 'chat' | 'add') => void;
   error: string | null;
   courses: Course[];
 }
@@ -82,6 +83,16 @@ function CourseList({
         sx={{ mt: 1, ml: 1, width: 'calc(100% - 16px)' }}
       >
         Enroll
+      </Button>
+      <Button
+        variant="outlined"
+        startIcon={<ChatIcon />}
+        onClick={() => {
+          onSelect?.('chat');
+        }}
+        sx={{ mt: 1, ml: 1, width: 'calc(100% - 16px)' }}
+      >
+        Chatbot
       </Button>
     </>
   );

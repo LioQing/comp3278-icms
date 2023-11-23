@@ -17,20 +17,23 @@ import { CourseList as Course, getCourseList } from '../models/CourseList';
 import { CourseDetails, getCourseDetails } from '../models/CourseDetails';
 import { SessionDetails, getSessionDetails } from '../models/SessionDetails';
 import AddCourse from '../components/AddCourse';
+import Chatbot from '../components/Chatbot';
 
 const transition = 'all 250ms cubic-bezier(0.4, 0, 0.2, 1)';
 
 function Courses() {
   const history = React.useMemo(() => window.history, []);
   const query = useQuery();
-  const [courseId, setCourseId] = React.useState<number | 'add' | null>(() => {
+  const [courseId, setCourseId] = React.useState<
+    number | 'add' | 'chat' | null
+  >(() => {
     const id = query.get('course');
     if (id === null) return null;
     return parseInt(id, 10);
   });
-  const [course, setCourse] = React.useState<CourseDetails | 'add' | null>(
-    null,
-  );
+  const [course, setCourse] = React.useState<
+    CourseDetails | 'add' | 'chat' | null
+  >(null);
   const [courses, setCourses] = React.useState<Course[]>([]);
   const [coursesError, setCoursesError] = React.useState<string | null>(null);
   const [current, setCurrent] = React.useState<CourseCurrentInfo[]>([]);
@@ -91,7 +94,7 @@ function Courses() {
   const courseDetailsClient = useAxios<CourseDetails>();
 
   React.useEffect(() => {
-    if (!courseId || courseId === 'add') return;
+    if (!courseId || courseId === 'add' || courseId === 'chat') return;
 
     courseDetailsClient.sendRequest(getCourseDetails(courseId));
   }, [courseId]);
@@ -128,12 +131,20 @@ function Courses() {
     setSession(null);
   };
 
-  const handleSetOpenedCourse = (id?: number | 'add') => {
+  const handleSetOpenedCourse = (id?: number | 'add' | 'chat') => {
     if (id === 'add') {
       setCourse('add');
       setCourseId('add');
       setSessionId(null);
       setOpened(true);
+      return;
+    }
+    if (id === 'chat') {
+      setCourse('chat');
+      setCourseId('chat');
+      setSessionId(null);
+      setOpened(true);
+      return;
     }
 
     if (id === courseId) {
@@ -157,7 +168,7 @@ function Courses() {
 
   // Handle url for state changes
   React.useEffect(() => {
-    if (prevCourse === undefined || courseId === 'add') {
+    if (prevCourse === undefined || courseId === 'add' || courseId === 'chat') {
       return;
     }
 
@@ -201,7 +212,11 @@ function Courses() {
           titleSx={{ ml: 1 }}
         >
           <CourseList
-            selected={course !== null && course !== 'add' ? course.id : null}
+            selected={
+              course !== null && course !== 'add' && course !== 'chat'
+                ? course.id
+                : null
+            }
             current={current}
             withinOneHour={withinOneHour}
             editMode={false}
@@ -243,7 +258,10 @@ function Courses() {
             onClose={() => handleSetOpenedCourse()}
           />
         )}
-        {(course !== 'add' || course === null) && (
+        {(course === 'chat' || course === null) && (
+          <Chatbot opened={opened} onClose={() => handleSetOpenedCourse()} />
+        )}
+        {((course !== 'add' && course !== 'chat') || course === null) && (
           <CoursePanel
             course={course}
             withinOneHour={false}

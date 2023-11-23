@@ -127,6 +127,12 @@ function AddCourse({ courses, setCourses, opened, onClose }: AddCourseProps) {
     setPage(2);
   };
 
+  const keyPress = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.key === 'Enter') {
+      handleSearch();
+    }
+  };
+
   return (
     <Panel
       title="Enroll Course"
@@ -146,6 +152,7 @@ function AddCourse({ courses, setCourses, opened, onClose }: AddCourseProps) {
           setQuery(e.target.value);
         }}
         sx={{ width: '100%', mb: 2 }}
+        onKeyDown={keyPress}
         InputProps={{
           endAdornment: (
             <IconButton onClick={handleSearch}>
