@@ -46,7 +46,7 @@ source icms_data_empty.sql;
 
 ### Backend
 
-You need to assign the correct value for the `.env` file in the `backend` directory.
+You need to assign the correct value for the `.env` file in the `backend` directory by referencing from `.env.example`.
 
 Then open a terminal in the directory and run the following commands.
 
@@ -65,7 +65,7 @@ python manage.py runserver
 
 ### Frontend
 
-You need to assign the correct value for the `.env` file in the `frontend` directory.
+You need to assign the correct value for the `.env` file in the `frontend` directory by referencing from `.env.example`.
 
 Then open another terminal in the directory and run the following commands.
 
