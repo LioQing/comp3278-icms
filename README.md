@@ -6,8 +6,6 @@ This repository contains the source code for the project.
 
 The project requires Python (developed and tested in 3.11) and Node.js (developed and tested in 18.17.1)
 
-The required files may all be downloaded from the release page on GitHub.
-
 After downloading the files, extract the files to a directory.
 
 ### MySQL
@@ -19,21 +17,12 @@ For the demo to work, you need to import the database and the media files.
 - The database table file is `icms_tables.sql`.
 
 - The database data file with an existing account (username: timmy, password: icms20231123) is `icms_data.sql`.
-
+  
   - It has face data for the account but it is not trained, so it will not work. You have to setup face again (You can setup face for another account and all the account's face data will be trained).
 
 - The media files are in `media.zip`.
 
 Unzip the media files to the `media` directory in the `backend` root directory, so it looks like this.
-
-```
-comp3278-icms-main
-├─ backend/
-│  └─ media/
-│     ├─ content of media.zip
-│     └─ ...
-└─ ...
-```
 
 Then open a terminal and run the following commands.
 
@@ -91,7 +80,6 @@ npm start
 
 Then open a browser and go to [http://localhost:3000](http://localhost:3000) to see the frontend.
 
-
 ## Getting Started
 
 There are two parts to this project: the frontend and the backend.
@@ -106,11 +94,13 @@ To get started with the backend, go to branch [backend](https://github.com/LioQi
 ***Important: due to the use of local commit hooks, it is highly recommended to `git clone` the repository once for each branch, and have a file structure like the follow:***
 
 `git clone` the repository.
+
 ```bash
 git clone git@github.com:LioQing/comp3278-icms.git
 ```
 
 Checkout the respective branch, or do not checkout any branch to stay in main branch.
+
 ```bash
 git checkout frontend
 # or
@@ -120,6 +110,7 @@ git checkout main
 ```
 
 Then rename the directory to the respective branch to create a structure like below.
+
 ```
 <whatever directory you are in>/
 ├─ comp3278-icms-main/
@@ -144,7 +135,7 @@ flowchart TD
 
     loginOrRegister -- Login --> inputUsername[/Login Username/]
     loginOrRegister -- Register --> register[/Register Page/]
-    
+
     database[(Database)]
     setupFace -.- database
     register -.- database
@@ -190,7 +181,7 @@ flowchart TD
     classes --> session[Sessions]
     classes --> enroll[Enroll]
     classes --> chatbot[Chatbot]
-    
+
     logout -.- cookie[(Cookie)]
 
     actions --> settings[Settings page]
@@ -203,6 +194,7 @@ flowchart TD
 To start development, you should follow the instructions in the respective branches.
 
 First clone the repository.
+
 ```bash
 git clone git@github.com:LioQing/comp3278-icms.git
 ```
@@ -210,6 +202,7 @@ git clone git@github.com:LioQing/comp3278-icms.git
 **Important**: You may need to setup SSH keys for your GitHub account. See [this guide](https://help.github.com/en/github/authenticating-to-github/connecting-to-github-with-ssh) for more information.
 
 Then checkout the branch you want to work on.
+
 ```bash
 git checkout frontend
 # or
@@ -219,6 +212,7 @@ git checkout backend
 Then follow the instructions in the respective branches to start development.
 
 Commit your changes to the branch you are working on.
+
 ```bash
 git add .
 git commit -m "Your commit message"
@@ -227,6 +221,7 @@ git commit -m "Your commit message"
 Make any changes and stage your files again according to the pre-commit hooks.
 
 Set your branch's upstream branch to be the same branch on the remote repository on GitHub.
+
 ```bash
 git push -u origin frontend
 # or
@@ -234,6 +229,7 @@ git push -u origin backend
 ```
 
 After the first time you set the upstream branch, you can simply push without specifying the branch.
+
 ```bash
 git push
-``` 
+```
