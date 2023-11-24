@@ -142,13 +142,12 @@ function Login() {
       if (!faceLoginClient.request?.data?.username) {
         setWebcamError('An error occurred');
       }
-    } else {
-      const data: any = faceLoginClient.error.response?.data;
-      if (data.detail) {
-        setWebcamError(data.detail);
-      } else {
-        setWebcamError(faceLoginClient.error.message);
-      }
+      faceLoginClient.sendRequest(
+        postFaceLogin({
+          username: username ?? '',
+          image: imageSrc,
+        }),
+      );
     }
   }, [faceLoginClient.error]);
 
@@ -211,6 +210,7 @@ function Login() {
 
   const handleUseFace = () => {
     clearAllErrors();
+    setLoading(true);
     setLoginStage(2);
   };
 
@@ -221,20 +221,21 @@ function Login() {
     const data = new FormData(event.currentTarget);
 
     if (loginStage === 0) {
+      setUsername(data.get('username') as string);
       loginUsernameClient.sendRequest(
         postLoginUsername({ username: data.get('username') as string }),
       );
     } else if (loginStage === 1) {
-      event.currentTarget.username.disabled = true;
+      setUsername(data.get('username') as string);
       loginClient.sendRequest(
         postLogin({
           username: data.get('username') as string,
           password: data.get('password') as string,
         }),
       );
+      event.currentTarget.username.disabled = true;
     } else if (loginStage === 2) {
       event.currentTarget.username.disabled = true;
-      setUsername(data.get('username') as string);
       setLoginStage(1);
     } else {
       console.error('Invalid login stage');
